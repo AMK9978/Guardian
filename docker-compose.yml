@@ -1,0 +1,85 @@
+version: '3'
+
+services:
+  guardian:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_ADDR=redis:6379
+      - MONGODB_URI=mongodb://mongodb:27017
+      - RABBITMQ_URI=amqp://rabbitmq:5672
+      - MILVUS_URI=milvus:19530
+      - SERVER_PORT=8080
+      - FAILURE_THRESHOLD=3
+      - CB_TIMEOUT=5
+      - LOCK_TIME=5
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      milvus:
+        condition: service_healthy
+    links:
+      - redis
+      - rabbitmq
+      - mongodb
+      - milvus
+
+  redis:
+    image: redis:latest
+    container_name: redis_db
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - /data/cache:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672" # RabbitMQ management UI
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - /data/mongodb:/data/db
+    healthcheck:
+      test: ["CMD", "mongodb", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  milvus:
+    image: milvusdb/milvus:latest
+    container_name: milvus
+    restart: unless-stopped
+    ports:
+      - "19530:19530" # Milvus main service port
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://milvus:19530"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
