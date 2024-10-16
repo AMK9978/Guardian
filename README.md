@@ -4,7 +4,7 @@ A secure end-to-end LLM guardian for seamless integration
 ## Get Started
 Docker:
 ```
-git clone git@github.com:LLMGuardian/GuardianFramework.git
+git clone git@github.com:LLMGuardian/Guardian.git
 docker-compose up --build -d
 ```
 
