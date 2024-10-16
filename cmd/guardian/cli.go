@@ -1,14 +1,14 @@
 package guardian
 
 import (
+	"guardian/internal/mongodb"
 	"net/http"
 
 	"guardian/api"
 	"guardian/configs"
-	"guardian/pkg/metrics"
-	"guardian/pkg/milvus"
-	"guardian/pkg/mongodb"
-	"guardian/pkg/redis"
+	"guardian/internal/metrics"
+	"guardian/internal/milvus"
+	"guardian/internal/redis"
 	"guardian/utlis/logger"
 
 	"github.com/gorilla/mux"
@@ -35,12 +35,11 @@ func init() {
 		}
 	}()
 
-	cfg := configs.LoadConfig()
-
-	redis.NewClient(cfg.RedisAddr)
+	redis.NewClient(configs.GlobalConfig.RedisAddr)
 	//rabbitMQClient := rabbitmq.NewClient(cfg.RabbitMQURI)
-	mongodb.NewClient(cfg.MongoDBURI)
-	milvus.NewClient(cfg.MilvusURI)
+	mongodb.Init()
+
+	milvus.NewClient(configs.GlobalConfig.MilvusURI)
 
 	startServer()
 

@@ -2,10 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"guardian/internal/models"
 	"net/http"
 
-	"guardian/models"
-	"guardian/pkg/services"
+	"guardian/internal/services"
 	"guardian/utlis/logger"
 )
 
