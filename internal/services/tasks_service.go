@@ -12,20 +12,6 @@ type ProcessingTask interface {
 	Process(req models.SendRequest) (bool, error)
 }
 
-//
-//type FewShotTask struct {
-//	Template string
-//	ApiUrl string
-//}
-
-//func (f *FewShotTask) Process(req models.SendRequest) (bool, error) {
-//	resp, err := httpAPICall(f.ApiUrl, fmt.Sprintf("%s\n%s", f.Template, req.Prompt))
-//	if err != nil {
-//		return false, err
-//	}
-//	return , nil
-//}
-
 type ExternalHttpServiceTask struct {
 	ApiUrl string
 }

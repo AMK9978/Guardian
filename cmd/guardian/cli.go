@@ -1,17 +1,15 @@
 package guardian
 
 import (
-	"guardian/internal/mongodb"
-	"net/http"
-
-	"guardian/api"
 	"guardian/configs"
 	"guardian/internal/metrics"
 	"guardian/internal/milvus"
+	"guardian/internal/mongodb"
 	"guardian/internal/redis"
+	"guardian/internal/server"
 	"guardian/utlis/logger"
+	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 )
 
@@ -47,10 +45,5 @@ func init() {
 }
 
 func startServer() {
-	r := mux.NewRouter()
-
-	r.HandleFunc("/send", api.SendHandler).Methods("POST")
-
-	logger.GetLogger().Println("Server starting on port 8080")
-	http.ListenAndServe(":8080", r)
+	server.StartServer()
 }

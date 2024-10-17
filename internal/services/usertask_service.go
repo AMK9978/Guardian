@@ -7,11 +7,15 @@ import (
 	"guardian/internal/repository"
 )
 
+type UserTaskServiceInterface interface {
+	GetUserTasks(userID uuid.UUID) ([]models.UserTask, error)
+}
+
 type UserTaskService struct {
 	userTaskRepo *repository.UserTaskRepository
 }
 
-func NewUserTaskRepo(userTaskRepo *repository.UserTaskRepository) *UserTaskService {
+func NewUserTaskService(userTaskRepo *repository.UserTaskRepository) *UserTaskService {
 	return &UserTaskService{
 		userTaskRepo: userTaskRepo,
 	}

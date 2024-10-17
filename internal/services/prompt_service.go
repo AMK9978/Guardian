@@ -6,12 +6,16 @@ import (
 	"guardian/utlis/logger"
 )
 
+type PromptServiceInterface interface {
+	ProcessPrompt(req models.SendRequest) (string, error)
+}
+
 type PromptService struct {
-	userTaskService *UserTaskService
+	userTaskService UserTaskServiceInterface
 	tasksMap        map[string]ProcessingTask
 }
 
-func NewPromptService(userTaskService *UserTaskService) *PromptService {
+func NewPromptService(userTaskService UserTaskServiceInterface) *PromptService {
 	return &PromptService{
 		userTaskService: userTaskService,
 		tasksMap: map[string]ProcessingTask{

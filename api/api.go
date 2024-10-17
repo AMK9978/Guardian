@@ -9,7 +9,18 @@ import (
 	"guardian/utlis/logger"
 )
 
-func SendHandler(w http.ResponseWriter, r *http.Request) {
+type SendHandlerController struct {
+    promptService services.PromptServiceInterface
+}
+
+
+func NewSendHandlerController(promptService *services.PromptService) *SendHandlerController {
+    return &SendHandlerController{
+        promptService: promptService,
+    }
+}
+
+func (h *SendHandlerController) SendHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.SendRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -17,7 +28,7 @@ func SendHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := services.ProcessPrompt(req)
+	status, err := h.promptService.ProcessPrompt(req)
 	if err != nil {
 		logger.GetLogger().Error(w, "Internal server error", http.StatusInternalServerError)
 		return

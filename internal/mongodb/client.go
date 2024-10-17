@@ -11,17 +11,18 @@ import (
 )
 
 var (
-	Client *mongo.Client
+	Client   *mongo.Client
 	Database *mongo.Database
 )
 
-func Init() {
+func Init() *mongo.Database {
 	var err error
 	Client, err = NewClient(configs.GlobalConfig.MongoDBURI)
 	if err != nil {
 		logger.GetLogger().Fatal(err)
 	}
 	Database = Client.Database(configs.GlobalConfig.PrimaryDBName)
+	return Database
 }
 
 func NewClient(mongoDBURI string) (*mongo.Client, error) {
