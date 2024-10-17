@@ -1,11 +1,8 @@
 package guardian
 
 import (
-	"guardian/configs"
 	"guardian/internal/metrics"
-	"guardian/internal/milvus"
 	"guardian/internal/mongodb"
-	"guardian/internal/redis"
 	"guardian/internal/server"
 	"guardian/utlis/logger"
 	"net/http"
@@ -33,11 +30,11 @@ func init() {
 		}
 	}()
 
-	redis.NewClient(configs.GlobalConfig.RedisAddr)
+	//redis.NewClient(configs.GlobalConfig.RedisAddr)
 	//rabbitMQClient := rabbitmq.NewClient(cfg.RabbitMQURI)
 	mongodb.Init()
 
-	milvus.NewClient(configs.GlobalConfig.MilvusURI)
+	//milvus.NewClient(configs.GlobalConfig.MilvusURI)
 
 	startServer()
 
