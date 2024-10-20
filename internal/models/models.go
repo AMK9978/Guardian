@@ -83,3 +83,10 @@ type GroupTask struct {
 	GroupID uuid.UUID `json:"group_id"`
 	Task    Task      `json:"task"`
 }
+
+// TaskResult represents the result of task in the task pipeline
+type TaskResult struct {
+	TaskType string
+	Success  bool
+	Err      error
+}
