@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"guardian/configs"
 	"net/http"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/jwtauth/v5"
 	swagger "github.com/swaggo/http-swagger"
 	"golang.org/x/sync/errgroup"
 )
@@ -57,6 +59,22 @@ func setupRoutes(router *chi.Mux) {
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("welcome"))
 	})
+
+	authController := setup.InitializeAuthController(mongodb.Database)
 	controller := setup.InitializeSendHandlerController(mongodb.Database)
-	router.Post("/send", controller.SendHandler)
+	router.Route("/user", func(r chi.Router) {
+		r.Post("/login", authController.Login)
+		r.Post("/sign-up", authController.SignUp)
+	})
+
+	router.Group(func(protected chi.Router) {
+		protected.Use(jwtauth.Verifier(configs.GlobalConfig.TokenAuth))
+		protected.Use(jwtauth.Authenticator(configs.GlobalConfig.TokenAuth))
+
+		protected.Put("/user/update", authController.UpdateUser)
+		protected.Patch("/user/activate", authController.ActivateUser)
+		protected.Delete("/user/delete", authController.DeleteUser)
+
+		protected.Post("/send", controller.SendHandler)
+	})
 }

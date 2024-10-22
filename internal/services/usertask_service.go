@@ -2,13 +2,13 @@ package services
 
 import (
 	"context"
-	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"guardian/internal/models"
 	"guardian/internal/repository"
 )
 
 type UserTaskServiceInterface interface {
-	GetUserTasks(userID uuid.UUID) ([]models.UserTask, error)
+	GetUserTasks(userID primitive.ObjectID) ([]models.UserTask, error)
 }
 
 type UserTaskService struct {
@@ -21,6 +21,6 @@ func NewUserTaskService(userTaskRepo *repository.UserTaskRepository) *UserTaskSe
 	}
 }
 
-func (u *UserTaskService) GetUserTasks(userID uuid.UUID) ([]models.UserTask, error) {
+func (u *UserTaskService) GetUserTasks(userID primitive.ObjectID) ([]models.UserTask, error) {
 	return u.userTaskRepo.GetUserTasks(context.Background(), userID)
 }

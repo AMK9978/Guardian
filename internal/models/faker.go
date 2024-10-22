@@ -38,10 +38,11 @@ func generateFakeGroup() Group {
 
 func generateFakeUser() User {
 	return User{
-		ID:     uuid.MustParse(gofakeit.UUID()),
-		Name:   gofakeit.Name(),
-		Status: gofakeit.Number(0, 1),
-		Groups: []Group{generateFakeGroup()},
+		ID:       uuid.MustParse(gofakeit.UUID()),
+		Name:     gofakeit.Name(),
+		Password: gofakeit.Password(true, false, false, false, false, 32),
+		Status:   gofakeit.Number(0, 1),
+		Groups:   []Group{generateFakeGroup()},
 	}
 }
 

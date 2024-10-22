@@ -7,6 +7,7 @@
 package setup
 
 import (
+	"github.com/google/wire"
 	"go.mongodb.org/mongo-driver/mongo"
 	"guardian/api"
 	"guardian/internal/repository"
@@ -17,8 +18,27 @@ import (
 
 func InitializeSendHandlerController(db *mongo.Database) *api.SendHandlerController {
 	userTaskRepository := repository.NewUserTasksRepository(db)
-	userTaskService := services.NewUserTaskService(userTaskRepository)
+	userTaskService := NewUserTaskService(userTaskRepository)
 	promptService := services.NewPromptService(userTaskService)
 	sendHandlerController := api.NewSendHandlerController(promptService)
 	return sendHandlerController
 }
+
+func InitializeAuthController(db *mongo.Database) *api.AuthController {
+	userRepository := repository.NewUserRepository(db)
+	userService := services.NewUserService(userRepository)
+	authController := api.NewAuthController(userService)
+	return authController
+}
+
+// wire.go:
+
+func NewUserTaskService(userTaskRepo *repository.UserTaskRepository) *services.UserTaskService {
+	return services.NewUserTaskService(userTaskRepo)
+}
+
+var UserTaskServiceSet = wire.NewSet(
+	NewUserTaskService, wire.Bind(new(services.UserTaskServiceInterface), new(*services.UserTaskService)),
+)
+
+var SendHandlerSet = wire.NewSet(api.NewSendHandlerController, services.NewPromptService, UserTaskServiceSet, repository.NewUserTasksRepository)

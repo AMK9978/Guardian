@@ -1,10 +1,12 @@
 package configs
 
 import (
+	"github.com/go-chi/jwtauth/v5"
 	"guardian/utlis/logger"
 	"os"
 	"runtime"
 	"strconv"
+	"time"
 )
 
 var GlobalConfig Config
@@ -39,6 +41,8 @@ type Config struct {
 	PrimaryDBName          string
 	CollectionNames        *Collections
 	PipelineWorkerPoolSize int
+	TokenAuth              *jwtauth.JWTAuth
+	TokenExpirationTime    time.Duration
 }
 
 func LoadConfig() Config {
@@ -48,6 +52,14 @@ func LoadConfig() Config {
 		logger.GetLogger().Fatalf("coudn't convert the worker pool size to int: %s", numWorkersStr)
 	}
 
+	secretKey := getEnv("JWT_SECRET_KEY", "")
+	tokenAuth := jwtauth.New("HS256", []byte(secretKey), nil)
+	tokenExpTimeStr := getEnv("TOKEN_EXP_TIME", "72")
+	tokenExpTime, err := strconv.Atoi(tokenExpTimeStr)
+	if err != nil {
+		logger.GetLogger().Fatalf("coudn't convert the token expiration time to int: %s", tokenExpTimeStr)
+	}
+
 	return Config{
 		RedisAddr:              getEnv("REDIS_ADDR", "localhost:6379"),
 		MongoDBURI:             getEnv("MONGODB_URI", "mongodb://localhost:27017"),
@@ -55,6 +67,8 @@ func LoadConfig() Config {
 		MilvusURI:              getEnv("MILVUS_URI", "localhost:19530"),
 		ServerPort:             getEnv("SERVER_PORT", "8080"),
 		PrimaryDBName:          getEnv("PRIMARY_DB_NAME", "primary"),
+		TokenAuth:              tokenAuth,
+		TokenExpirationTime:    time.Hour * time.Duration(tokenExpTime),
 		PipelineWorkerPoolSize: numWorkers,
 		CollectionNames:        NewCollections(),
 	}
