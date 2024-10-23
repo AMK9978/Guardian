@@ -1,32 +1,8 @@
-package models
+package entities
 
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
-
-type LoginRequest struct {
-	UserID   primitive.ObjectID `json:"user_id"`
-	Password string             `json:"password"`
-}
-
-type SignUpRequest struct {
-	// TODO: UserCreateDTO instead of User
-	User User `json:"user"`
-}
-
-// SendRequest represents a request to send a prompt.
-type SendRequest struct {
-	UserID primitive.ObjectID  `json:"user_id"`
-	ChatID *primitive.ObjectID `json:"chat_id,omitempty"`
-	Prompt string              `json:"prompt"`
-	Target []TargetModel       `json:"targets"`
-}
-
-// SendResponse represents the response from a send operation.
-type SendResponse struct {
-	Status string  `json:"status"`
-	Target AIModel `json:"target,omitempty"`
-}
 
 // Group represents a group of users.
 type Group struct {
@@ -40,7 +16,7 @@ type Group struct {
 type User struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty"`
 	Name     string             `json:"name"`
-	Password string             `json:"password"`
+	Password string             `json:"-"`
 	Status   int                `json:"status"`
 	Groups   []Group            `json:"groups"`
 }

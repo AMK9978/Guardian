@@ -4,6 +4,7 @@ go 1.23.2
 
 require (
 	github.com/brianvoe/gofakeit/v6 v6.28.0
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-chi/jwtauth/v5 v5.3.1
 	github.com/google/uuid v1.1.2
@@ -16,6 +17,7 @@ require (
 	github.com/streadway/amqp v1.1.0
 	github.com/swaggo/http-swagger v1.3.4
 	go.mongodb.org/mongo-driver v1.17.1
+	golang.org/x/crypto v0.26.0
 	golang.org/x/sync v0.8.0
 )
 
@@ -69,7 +71,6 @@ require (
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
-	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/net v0.26.0 // indirect
 	golang.org/x/sys v0.23.0 // indirect
 	golang.org/x/text v0.19.0 // indirect

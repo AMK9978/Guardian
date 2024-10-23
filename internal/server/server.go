@@ -3,10 +3,12 @@ package server
 import (
 	"context"
 	"guardian/configs"
+	"guardian/internal/ratelimit"
 	"net/http"
 	"time"
 
 	"guardian/internal/mongodb"
+	redisClient "guardian/internal/redis"
 	"guardian/internal/setup"
 	"guardian/utlis/logger"
 
@@ -67,6 +69,9 @@ func setupRoutes(router *chi.Mux) {
 		r.Post("/sign-up", authController.SignUp)
 	})
 
+	if configs.GlobalConfig.EnableRateLimiter {
+		router.Use(ratelimit.RateLimiterMiddleware(redisClient.Client))
+	}
 	router.Group(func(protected chi.Router) {
 		protected.Use(jwtauth.Verifier(configs.GlobalConfig.TokenAuth))
 		protected.Use(jwtauth.Authenticator(configs.GlobalConfig.TokenAuth))

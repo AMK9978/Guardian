@@ -42,7 +42,12 @@ type Config struct {
 	CollectionNames        *Collections
 	PipelineWorkerPoolSize int
 	TokenAuth              *jwtauth.JWTAuth
+	ActivationTokenKey     string
 	TokenExpirationTime    time.Duration
+	ActivationTokenExpTime time.Duration
+	EnableRateLimiter      bool
+	RequestLimit           int
+	Interval               time.Duration
 }
 
 func LoadConfig() Config {
@@ -56,8 +61,28 @@ func LoadConfig() Config {
 	tokenAuth := jwtauth.New("HS256", []byte(secretKey), nil)
 	tokenExpTimeStr := getEnv("TOKEN_EXP_TIME", "72")
 	tokenExpTime, err := strconv.Atoi(tokenExpTimeStr)
+
+	activationSecretKey := getEnv("ACTIVATION_SECRET_KEY", "")
+	activationTokenExpTimeStr := getEnv("ACTIVATION_TOKEN_EXP_TIME", "72")
+	activationTokenExpTime, err := strconv.Atoi(activationTokenExpTimeStr)
 	if err != nil {
-		logger.GetLogger().Fatalf("coudn't convert the token expiration time to int: %s", tokenExpTimeStr)
+		logger.GetLogger().Fatalf("couldn't convert the token expiration time to int: %s", tokenExpTimeStr)
+	}
+
+	rateLimiterStatus, err := strconv.ParseBool(getEnv("RATE_LIMITER_STATUS", "false"))
+	if err != nil {
+		logger.GetLogger().Fatal("couldn't convert the rate limiter status to bool")
+	}
+	rateInterval, requestLimit := -1, -1
+	if rateLimiterStatus {
+		requestLimit, err = strconv.Atoi(getEnv("REQUEST_LIMIT", "10"))
+		if err != nil {
+			logger.GetLogger().Fatal("couldn't convert the request limit to int")
+		}
+		rateInterval, err = strconv.Atoi(getEnv("RATE_INTERVAL", "1"))
+		if err != nil {
+			logger.GetLogger().Fatal("couldn't convert the rate interval time to int")
+		}
 	}
 
 	return Config{
@@ -68,9 +93,14 @@ func LoadConfig() Config {
 		ServerPort:             getEnv("SERVER_PORT", "8080"),
 		PrimaryDBName:          getEnv("PRIMARY_DB_NAME", "primary"),
 		TokenAuth:              tokenAuth,
+		ActivationTokenKey:     activationSecretKey,
 		TokenExpirationTime:    time.Hour * time.Duration(tokenExpTime),
+		ActivationTokenExpTime: time.Hour * time.Duration(activationTokenExpTime),
 		PipelineWorkerPoolSize: numWorkers,
 		CollectionNames:        NewCollections(),
+		EnableRateLimiter:      rateLimiterStatus,
+		Interval:               time.Minute * time.Duration(rateInterval),
+		RequestLimit:           requestLimit,
 	}
 }
 

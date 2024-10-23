@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"guardian/internal/models/entities"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -11,43 +12,43 @@ import (
 	"guardian/utlis/logger"
 )
 
-func generateFakeSendRequest() SendRequest {
+func generateFakeSendRequest() entities.SendRequest {
 	chatID, _ := uuid.Parse(gofakeit.UUID())
 
-	target := TargetModel{
+	target := entities.TargetModel{
 		ModelID: uuid.MustParse(gofakeit.UUID()),
 		Token:   gofakeit.LetterN(10),
 	}
 
-	return SendRequest{
+	return entities.SendRequest{
 		UserID: uuid.MustParse(gofakeit.UUID()),
 		ChatID: &chatID,
 		Prompt: gofakeit.Sentence(5),
-		Target: []TargetModel{target},
+		Target: []entities.TargetModel{target},
 	}
 }
 
-func generateFakeGroup() Group {
-	return Group{
+func generateFakeGroup() entities.Group {
+	return entities.Group{
 		ID:     uuid.MustParse(gofakeit.UUID()),
 		Name:   gofakeit.Company(),
 		Status: gofakeit.Number(1, 3),
-		Users:  []User{generateFakeUser(), generateFakeUser()},
+		Users:  []entities.User{generateFakeUser(), generateFakeUser()},
 	}
 }
 
-func generateFakeUser() User {
-	return User{
+func generateFakeUser() entities.User {
+	return entities.User{
 		ID:       uuid.MustParse(gofakeit.UUID()),
 		Name:     gofakeit.Name(),
 		Password: gofakeit.Password(true, false, false, false, false, 32),
 		Status:   gofakeit.Number(0, 1),
-		Groups:   []Group{generateFakeGroup()},
+		Groups:   []entities.Group{generateFakeGroup()},
 	}
 }
 
-func generateFakeAIModel() AIModel {
-	return AIModel{
+func generateFakeAIModel() entities.AIModel {
+	return entities.AIModel{
 		Name:    gofakeit.AppName(),
 		Address: gofakeit.URL(),
 		Status:  gofakeit.Number(1, 3),

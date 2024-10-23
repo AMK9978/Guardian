@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"guardian/configs"
-	"guardian/internal/models"
+	"guardian/internal/models/entities"
 	"guardian/utlis/logger"
 	"sync"
 )
 
 type PromptServiceInterface interface {
-	ProcessPrompt(req models.SendRequest) (string, error)
+	ProcessPrompt(req entities.SendRequest) (string, error)
 }
 
 type PromptService struct {
@@ -27,7 +27,7 @@ func NewPromptService(userTaskService UserTaskServiceInterface) *PromptService {
 	}
 }
 
-func (p *PromptService) ProcessPrompt(req models.SendRequest) (string, error) {
+func (p *PromptService) ProcessPrompt(req entities.SendRequest) (string, error) {
 	if req.Prompt == "" {
 		return "", errors.New("empty prompt")
 	}
@@ -39,7 +39,7 @@ func (p *PromptService) ProcessPrompt(req models.SendRequest) (string, error) {
 	return "benign", nil
 }
 
-func (p *PromptService) pipeline(req models.SendRequest) bool {
+func (p *PromptService) pipeline(req entities.SendRequest) bool {
 	userTasks, err := p.userTaskService.GetUserTasks(req.UserID)
 	if err != nil {
 		logger.GetLogger().Error(err)
@@ -48,8 +48,8 @@ func (p *PromptService) pipeline(req models.SendRequest) bool {
 
 	workerPoolSize := configs.LoadConfig().PipelineWorkerPoolSize
 
-	taskChan := make(chan models.UserTask, len(userTasks))
-	resultsChan := make(chan models.TaskResult, len(userTasks))
+	taskChan := make(chan entities.UserTask, len(userTasks))
+	resultsChan := make(chan entities.TaskResult, len(userTasks))
 	quit := make(chan struct{})
 
 	var wg sync.WaitGroup
@@ -80,8 +80,8 @@ func (p *PromptService) pipeline(req models.SendRequest) bool {
 	return true
 }
 
-func (p *PromptService) worker(taskChan chan models.UserTask, resultsChan chan models.TaskResult, quit chan struct{},
-	req models.SendRequest, wg *sync.WaitGroup) {
+func (p *PromptService) worker(taskChan chan entities.UserTask, resultsChan chan entities.TaskResult, quit chan struct{},
+	req entities.SendRequest, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	for {
@@ -95,21 +95,21 @@ func (p *PromptService) worker(taskChan chan models.UserTask, resultsChan chan m
 			if task, exists := p.tasksMap[taskType]; exists {
 				result, err := task.Process(req)
 				if err != nil {
-					resultsChan <- models.TaskResult{TaskType: taskType, Success: false, Err: err}
+					resultsChan <- entities.TaskResult{TaskType: taskType, Success: false, Err: err}
 					close(quit)
 					return
 				}
 
 				if !result {
-					resultsChan <- models.TaskResult{TaskType: taskType, Success: false}
+					resultsChan <- entities.TaskResult{TaskType: taskType, Success: false}
 					close(quit)
 					return
 				}
 
-				resultsChan <- models.TaskResult{TaskType: taskType, Success: true}
+				resultsChan <- entities.TaskResult{TaskType: taskType, Success: true}
 			} else {
 				err := fmt.Errorf("task type %s not found", taskType)
-				resultsChan <- models.TaskResult{TaskType: taskType, Success: false, Err: err}
+				resultsChan <- entities.TaskResult{TaskType: taskType, Success: false, Err: err}
 			}
 
 		case <-quit:

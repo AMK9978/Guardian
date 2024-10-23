@@ -32,7 +32,7 @@ func (r *MongoBaseRepository[T]) Delete(ctx context.Context, filter bson.M) erro
 	return err
 }
 
-func (r *MongoBaseRepository[T]) GetByID(ctx context.Context, filter bson.M) (*T, error) {
+func (r *MongoBaseRepository[T]) GetByFilter(ctx context.Context, filter bson.M) (*T, error) {
 	var entity T
 	err := r.collection.FindOne(ctx, filter).Decode(&entity)
 	return &entity, err

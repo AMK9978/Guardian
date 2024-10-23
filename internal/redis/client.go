@@ -8,11 +8,9 @@ import (
 
 var ctx = context.Background()
 
-type Client struct {
-	RedisClient *redis.Client
-}
+var Client *redis.Client
 
-func NewClient(redisAddr string) *Client {
+func NewClient(redisAddr string) *redis.Client {
 	client := redis.NewClient(&redis.Options{
 		Addr: redisAddr,
 	})
@@ -23,5 +21,9 @@ func NewClient(redisAddr string) *Client {
 		panic(err) // Handle this as needed
 	}
 
-	return &Client{RedisClient: client}
+	return client
+}
+
+func Init(redisAddr string) {
+	Client = NewClient(redisAddr)
 }

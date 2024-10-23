@@ -3,20 +3,19 @@ package services
 import (
 	"bytes"
 	"fmt"
+	"guardian/internal/models/entities"
 	"net/http"
-
-	"guardian/internal/models"
 )
 
 type ProcessingTask interface {
-	Process(req models.SendRequest) (bool, error)
+	Process(req entities.SendRequest) (bool, error)
 }
 
 type ExternalHttpServiceTask struct {
 	ApiUrl string
 }
 
-func (e *ExternalHttpServiceTask) Process(req models.SendRequest) (bool, error) {
+func (e *ExternalHttpServiceTask) Process(req entities.SendRequest) (bool, error) {
 	resp, err := httpAPICall(e.ApiUrl, req.Prompt)
 	if err != nil {
 		return false, err
