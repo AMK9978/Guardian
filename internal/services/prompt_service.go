@@ -4,13 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"guardian/configs"
+	"guardian/internal/models"
 	"guardian/internal/models/entities"
 	"guardian/utlis/logger"
 	"sync"
 )
 
 type PromptServiceInterface interface {
-	ProcessPrompt(req entities.SendRequest) (string, error)
+	ProcessPrompt(req models.SendRequest) (string, error)
 }
 
 type PromptService struct {
@@ -27,7 +28,7 @@ func NewPromptService(userTaskService UserTaskServiceInterface) *PromptService {
 	}
 }
 
-func (p *PromptService) ProcessPrompt(req entities.SendRequest) (string, error) {
+func (p *PromptService) ProcessPrompt(req models.SendRequest) (string, error) {
 	if req.Prompt == "" {
 		return "", errors.New("empty prompt")
 	}
@@ -39,7 +40,7 @@ func (p *PromptService) ProcessPrompt(req entities.SendRequest) (string, error) 
 	return "benign", nil
 }
 
-func (p *PromptService) pipeline(req entities.SendRequest) bool {
+func (p *PromptService) pipeline(req models.SendRequest) bool {
 	userTasks, err := p.userTaskService.GetUserTasks(req.UserID)
 	if err != nil {
 		logger.GetLogger().Error(err)
@@ -81,7 +82,7 @@ func (p *PromptService) pipeline(req entities.SendRequest) bool {
 }
 
 func (p *PromptService) worker(taskChan chan entities.UserTask, resultsChan chan entities.TaskResult, quit chan struct{},
-	req entities.SendRequest, wg *sync.WaitGroup) {
+	req models.SendRequest, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	for {

@@ -1,7 +1,6 @@
 package ratelimit
 
 import (
-	"context"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/redis/go-redis/v9"
 	"guardian/configs"
@@ -24,7 +23,7 @@ func RateLimiterMiddleware(redisClient *redis.Client) func(handler http.Handler)
 			}
 			redisKey := rateLimitKeyPrefix + userID
 
-			currentCountStr, err := redisClient.Get(context.Background(), redisKey).Result()
+			currentCountStr, err := redisClient.Get(r.Context(), redisKey).Result()
 			if err != nil && err != redis.Nil {
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
@@ -39,14 +38,14 @@ func RateLimiterMiddleware(redisClient *redis.Client) func(handler http.Handler)
 				return
 			}
 
-			err = redisClient.Incr(context.Background(), redisKey).Err()
+			err = redisClient.Incr(r.Context(), redisKey).Err()
 			if err != nil {
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}
 
 			if currentCount == 0 {
-				redisClient.Expire(context.Background(), redisKey, configs.GlobalConfig.Interval)
+				redisClient.Expire(r.Context(), redisKey, configs.GlobalConfig.Interval)
 			}
 			next.ServeHTTP(w, r)
 		})

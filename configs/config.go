@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"github.com/MicahParks/keyfunc"
 	"github.com/go-chi/jwtauth/v5"
 	"guardian/utlis/logger"
 	"os"
@@ -48,6 +49,10 @@ type Config struct {
 	EnableRateLimiter      bool
 	RequestLimit           int
 	Interval               time.Duration
+	Jwk                    *keyfunc.JWKS
+	ExternalJwtIssuer      string
+	ExternalJwtAudience    string
+	EnableExternalAuth     bool
 }
 
 func LoadConfig() Config {
@@ -73,6 +78,12 @@ func LoadConfig() Config {
 	if err != nil {
 		logger.GetLogger().Fatal("couldn't convert the rate limiter status to bool")
 	}
+
+	externalAuthStatus, err := strconv.ParseBool(getEnv("EXTERNAL_AUTH_STATUS", "false"))
+	if err != nil {
+		logger.GetLogger().Fatal("couldn't convert the external auth status to bool")
+	}
+
 	rateInterval, requestLimit := -1, -1
 	if rateLimiterStatus {
 		requestLimit, err = strconv.Atoi(getEnv("REQUEST_LIMIT", "10"))
@@ -82,6 +93,16 @@ func LoadConfig() Config {
 		rateInterval, err = strconv.Atoi(getEnv("RATE_INTERVAL", "1"))
 		if err != nil {
 			logger.GetLogger().Fatal("couldn't convert the rate interval time to int")
+		}
+	}
+
+	var jwks *keyfunc.JWKS
+	jwksURL := getEnv("JWKS_URL", "")
+
+	if jwksURL != "" {
+		jwks, err = keyfunc.Get(jwksURL, keyfunc.Options{})
+		if err != nil {
+			logger.GetLogger().Fatalf("Failed to create JWKS from URL: %s\n", err)
 		}
 	}
 
@@ -101,6 +122,10 @@ func LoadConfig() Config {
 		EnableRateLimiter:      rateLimiterStatus,
 		Interval:               time.Minute * time.Duration(rateInterval),
 		RequestLimit:           requestLimit,
+		Jwk:                    jwks,
+		ExternalJwtIssuer:      getEnv("EXTERNAL_JWT_ISSUER", ""),
+		ExternalJwtAudience:    getEnv("EXTERNAL_JWT_AUDIENCE", ""),
+		EnableExternalAuth:     externalAuthStatus,
 	}
 }
 

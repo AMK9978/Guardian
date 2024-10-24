@@ -1,6 +1,7 @@
 package guardian
 
 import (
+	"fmt"
 	"guardian/configs"
 	"guardian/internal/metrics"
 	"guardian/internal/mongodb"
@@ -26,8 +27,9 @@ func init() {
 
 	metrics.Init()
 	go func() {
-		logger.GetLogger().Info("Starting metrics server on :8081")
-		if err := http.ListenAndServe(":8081", metrics.Handler()); err != nil {
+		logger.GetLogger().Infof("Starting metrics server on :%s", configs.GlobalConfig.ServerPort)
+		err := http.ListenAndServe(fmt.Sprintf(":%s", configs.GlobalConfig.ServerPort), metrics.Handler())
+		if err != nil {
 			logger.GetLogger().Fatalf("Failed to start metrics server: %s", err)
 		}
 	}()

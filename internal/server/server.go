@@ -2,19 +2,20 @@ package server
 
 import (
 	"context"
-	"guardian/configs"
-	"guardian/internal/ratelimit"
 	"net/http"
 	"time"
 
+	"guardian/api"
+	"guardian/configs"
+	guardianMiddleware "guardian/internal/middleware"
 	"guardian/internal/mongodb"
+	"guardian/internal/ratelimit"
 	redisClient "guardian/internal/redis"
 	"guardian/internal/setup"
 	"guardian/utlis/logger"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/jwtauth/v5"
 	swagger "github.com/swaggo/http-swagger"
 	"golang.org/x/sync/errgroup"
 )
@@ -64,22 +65,35 @@ func setupRoutes(router *chi.Mux) {
 
 	authController := setup.InitializeAuthController(mongodb.Database)
 	controller := setup.InitializeSendHandlerController(mongodb.Database)
+
+	addAuthRoutes(router, authController)
+	setupRateLimiter(router)
+
+	router.Group(func(protected chi.Router) {
+		protected.Use(guardianMiddleware.VerifyJWT)
+		addProtectedRoutes(protected, authController, controller)
+	})
+}
+
+func setupRateLimiter(router *chi.Mux) {
+	if configs.GlobalConfig.EnableRateLimiter {
+		router.Use(ratelimit.RateLimiterMiddleware(redisClient.Client))
+	}
+}
+
+func addAuthRoutes(router *chi.Mux, authController *api.AuthController) {
 	router.Route("/user", func(r chi.Router) {
 		r.Post("/login", authController.Login)
 		r.Post("/sign-up", authController.SignUp)
 	})
+}
 
-	if configs.GlobalConfig.EnableRateLimiter {
-		router.Use(ratelimit.RateLimiterMiddleware(redisClient.Client))
-	}
-	router.Group(func(protected chi.Router) {
-		protected.Use(jwtauth.Verifier(configs.GlobalConfig.TokenAuth))
-		protected.Use(jwtauth.Authenticator(configs.GlobalConfig.TokenAuth))
+func addProtectedRoutes(protected chi.Router, authController *api.AuthController,
+	controller *api.SendHandlerController) {
 
-		protected.Put("/user/update", authController.UpdateUser)
-		protected.Patch("/user/activate", authController.ActivateUser)
-		protected.Delete("/user/delete", authController.DeleteUser)
+	protected.Put("/user/update", authController.UpdateUser)
+	protected.Patch("/user/activate", authController.ActivateUser)
+	protected.Delete("/user/delete", authController.DeleteUser)
 
-		protected.Post("/send", controller.SendHandler)
-	})
+	protected.Post("/send", controller.SendHandler)
 }
