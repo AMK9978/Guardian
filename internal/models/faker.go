@@ -2,26 +2,29 @@ package models
 
 import (
 	"context"
-	"guardian/internal/models/entities"
 	"time"
 
-	"github.com/brianvoe/gofakeit/v6"
-	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/bson"
+	"guardian/internal/models/entities"
 	"guardian/internal/mongodb"
 	"guardian/utlis/logger"
+
+	"github.com/brianvoe/gofakeit/v6"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func generateFakeSendRequest() entities.SendRequest {
-	chatID, _ := uuid.Parse(gofakeit.UUID())
+func generateFakeSendRequest() SendRequest {
+	modelID, _ := primitive.ObjectIDFromHex(gofakeit.UUID())
+	chatID, _ := primitive.ObjectIDFromHex(gofakeit.UUID())
+	userID, _ := primitive.ObjectIDFromHex(gofakeit.UUID())
 
 	target := entities.TargetModel{
-		ModelID: uuid.MustParse(gofakeit.UUID()),
-		Token:   gofakeit.LetterN(10),
+		ID:    modelID,
+		Token: gofakeit.LetterN(10),
 	}
 
-	return entities.SendRequest{
-		UserID: uuid.MustParse(gofakeit.UUID()),
+	return SendRequest{
+		UserID: userID,
 		ChatID: &chatID,
 		Prompt: gofakeit.Sentence(5),
 		Target: []entities.TargetModel{target},
@@ -29,29 +32,22 @@ func generateFakeSendRequest() entities.SendRequest {
 }
 
 func generateFakeGroup() entities.Group {
+	groupID, _ := primitive.ObjectIDFromHex(gofakeit.UUID())
 	return entities.Group{
-		ID:     uuid.MustParse(gofakeit.UUID()),
+		ID:     groupID,
 		Name:   gofakeit.Company(),
 		Status: gofakeit.Number(1, 3),
-		Users:  []entities.User{generateFakeUser(), generateFakeUser()},
 	}
 }
 
 func generateFakeUser() entities.User {
+	userID, _ := primitive.ObjectIDFromHex(gofakeit.UUID())
 	return entities.User{
-		ID:       uuid.MustParse(gofakeit.UUID()),
+		ID:       userID,
 		Name:     gofakeit.Name(),
 		Password: gofakeit.Password(true, false, false, false, false, 32),
 		Status:   gofakeit.Number(0, 1),
 		Groups:   []entities.Group{generateFakeGroup()},
-	}
-}
-
-func generateFakeAIModel() entities.AIModel {
-	return entities.AIModel{
-		Name:    gofakeit.AppName(),
-		Address: gofakeit.URL(),
-		Status:  gofakeit.Number(1, 3),
 	}
 }
 
@@ -61,8 +57,6 @@ func generate() {
 	sendRequest := generateFakeSendRequest()
 	group := generateFakeGroup()
 	logger.GetLogger().Infof("Fake Group: %+v\n", group)
-	aiModel := generateFakeAIModel()
-	logger.GetLogger().Infof("Fake AIModel: %+v\n", aiModel)
 
 	collection := mongodb.Client.Database("test_db").Collection("send_requests")
 	_, err := collection.InsertOne(context.Background(), bson.M{

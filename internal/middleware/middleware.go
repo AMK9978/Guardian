@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-chi/jwtauth/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"guardian/internal/models/entities"
+	"guardian/utlis/logger"
 	"net/http"
 	"strings"
 	"time"
@@ -107,7 +109,6 @@ func createUserInDB(userID string) (*entities.User, error) {
 	return nil, nil
 }
 
-
 func ParseRequestJWT(r *http.Request) (jwt.MapClaims, error) {
 	_, claims, err := jwtauth.FromContext(r.Context())
 	if err != nil {
@@ -116,12 +117,18 @@ func ParseRequestJWT(r *http.Request) (jwt.MapClaims, error) {
 	return claims, nil
 }
 
-func GetUserFromContext(r *http.Request) (string, error) {
+func GetUserFromContext(r *http.Request) (*primitive.ObjectID, error) {
 	claims, err := ParseRequestJWT(r)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	userIDStr := claims["user_id"].(string)
-	return userIDStr, nil
+	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		logger.GetLogger().Errorf("error in reading the userID from the user's token: %s", userIDStr)
+		return nil, err
+	}
+
+	return &userID, nil
 }

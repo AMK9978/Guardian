@@ -17,19 +17,19 @@ func init() {
 }
 
 type Collections struct {
-	User     string
-	UserTask string
-	Group    string
-	AIModel  string
+	User    string
+	Task    string
+	Group   string
+	AIModel string
 }
 
 // NewCollections initializes the collection names.
 func NewCollections() *Collections {
 	return &Collections{
-		User:     "users",
-		UserTask: "user_tasks",
-		Group:    "groups",
-		AIModel:  "ai_models",
+		User:    "users",
+		Task:    "tasks",
+		Group:   "groups",
+		AIModel: "ai_models",
 	}
 }
 

@@ -26,6 +26,6 @@ type SendRequest struct {
 
 // SendResponse represents the response from a send operation.
 type SendResponse struct {
-	Status string           `json:"status"`
-	Target entities.AIModel `json:"target,omitempty"`
+	Status string               `json:"status"`
+	Target entities.TargetModel `json:"target,omitempty"`
 }

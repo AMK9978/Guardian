@@ -33,6 +33,7 @@ func InitializeSendHandlerController(db *mongo.Database) *api.SendHandlerControl
 }
 
 func InitializeAuthController(db *mongo.Database) *api.AuthController {
-	wire.Build(repository.NewUserRepository, services.NewUserService, api.NewAuthController)
+	wire.Build(repository.NewUserRepository, repository.NewTaskRepository,
+		services.NewUserService, api.NewAuthController)
 	return &api.AuthController{}
 }

@@ -8,8 +8,6 @@ import (
 	"guardian/internal/models"
 	"guardian/internal/services"
 	"guardian/utlis/logger"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type SendHandlerController struct {
@@ -23,14 +21,10 @@ func NewSendHandlerController(promptService *services.PromptService) *SendHandle
 }
 
 func (h *SendHandlerController) SendHandler(w http.ResponseWriter, r *http.Request) {
-	userIDStr, err := middleware.GetUserFromContext(r)
+	userID, err := middleware.GetUserFromContext(r)
 	if err != nil {
 		logger.GetLogger().Error(err)
-	}
-
-	userID, err := primitive.ObjectIDFromHex(userIDStr)
-	if err != nil {
-		logger.GetLogger().Errorf("error in reading the userID from the user's token: %s", userIDStr)
+		return
 	}
 
 	var req models.SendRequest
@@ -40,7 +34,7 @@ func (h *SendHandlerController) SendHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	req.UserID = userID
+	req.UserID = *userID
 
 	status, err := h.promptService.ProcessPrompt(req)
 	if err != nil {

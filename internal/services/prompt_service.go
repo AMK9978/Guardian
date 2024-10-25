@@ -15,13 +15,14 @@ type PromptServiceInterface interface {
 }
 
 type PromptService struct {
-	userTaskService UserTaskServiceInterface
-	tasksMap        map[string]ProcessingTask
+	userService UserServiceInterface
+	tasksMap    map[string]ProcessingTask
 }
 
-func NewPromptService(userTaskService UserTaskServiceInterface) *PromptService {
+func NewPromptService(userService UserServiceInterface) *PromptService {
 	return &PromptService{
-		userTaskService: userTaskService,
+		userService: userService,
+		// TODO: Sample
 		tasksMap: map[string]ProcessingTask{
 			"external-api": &ExternalHttpServiceTask{ApiUrl: "https://google.com"},
 		},
@@ -41,7 +42,7 @@ func (p *PromptService) ProcessPrompt(req models.SendRequest) (string, error) {
 }
 
 func (p *PromptService) pipeline(req models.SendRequest) bool {
-	userTasks, err := p.userTaskService.GetUserTasks(req.UserID)
+	tasks, err := p.userService.GetUserTasksByID(req.UserID)
 	if err != nil {
 		logger.GetLogger().Error(err)
 		return false
@@ -49,8 +50,8 @@ func (p *PromptService) pipeline(req models.SendRequest) bool {
 
 	workerPoolSize := configs.LoadConfig().PipelineWorkerPoolSize
 
-	taskChan := make(chan entities.UserTask, len(userTasks))
-	resultsChan := make(chan entities.TaskResult, len(userTasks))
+	taskChan := make(chan entities.Task, len(tasks))
+	resultsChan := make(chan entities.TaskResult, len(tasks))
 	quit := make(chan struct{})
 
 	var wg sync.WaitGroup
@@ -59,8 +60,8 @@ func (p *PromptService) pipeline(req models.SendRequest) bool {
 		go p.worker(taskChan, resultsChan, quit, req, &wg)
 	}
 
-	for _, userTask := range userTasks {
-		taskChan <- userTask
+	for _, task := range tasks {
+		taskChan <- task
 	}
 	close(taskChan)
 
@@ -81,17 +82,17 @@ func (p *PromptService) pipeline(req models.SendRequest) bool {
 	return true
 }
 
-func (p *PromptService) worker(taskChan chan entities.UserTask, resultsChan chan entities.TaskResult, quit chan struct{},
+func (p *PromptService) worker(taskChan chan entities.Task, resultsChan chan entities.TaskResult, quit chan struct{},
 	req models.SendRequest, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	for {
 		select {
-		case userTask, ok := <-taskChan:
+		case task, ok := <-taskChan:
 			if !ok {
 				return
 			}
-			taskType := userTask.Task.Type
+			taskType := task.Type
 
 			if task, exists := p.tasksMap[taskType]; exists {
 				result, err := task.Process(req)

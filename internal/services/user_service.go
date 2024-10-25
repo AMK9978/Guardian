@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"guardian/configs"
 	"guardian/internal/models"
 	"guardian/internal/models/entities"
@@ -15,6 +16,8 @@ import (
 )
 
 type UserServiceInterface interface {
+	GetUserTasksByID(userID primitive.ObjectID) ([]entities.Task, error)
+	GetUser(id primitive.ObjectID) (*entities.User, error)
 	Login(req models.LoginRequest) (string, error)
 	SignUp(req models.SignUpRequest) error
 	ActivateUser(req models.SignUpRequest) error
@@ -22,12 +25,31 @@ type UserServiceInterface interface {
 
 type UserService struct {
 	userRepo *repository.UserRepository
+	taskRepo *repository.TaskRepository
 }
 
-func NewUserService(userRepo *repository.UserRepository) *UserService {
+func NewUserService(userRepo *repository.UserRepository, taskRepo *repository.TaskRepository) *UserService {
 	return &UserService{
 		userRepo: userRepo,
+		taskRepo: taskRepo,
 	}
+}
+
+func (u *UserService) GetUser(id primitive.ObjectID) (*entities.User, error) {
+	user, err := u.userRepo.GetByFilter(context.Background(), bson.M{"_id": id})
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (u *UserService) GetUserTasksByID(userID primitive.ObjectID) ([]entities.Task, error) {
+	user, err := u.GetUser(userID)
+	if err != nil {
+		return nil, err
+	}
+	tasks, err := u.taskRepo.GetTasks(context.Background(), user.Tasks)
+	return tasks, err
 }
 
 func (u *UserService) Login(req models.LoginRequest) (string, error) {
@@ -53,26 +75,24 @@ func (u *UserService) Login(req models.LoginRequest) (string, error) {
 }
 
 func (u *UserService) SignUp(req models.SignUpRequest) error {
-    hashedPassword, err := hashPassword(req.Password)
-    if err != nil {
-        return err
-    }
+	hashedPassword, err := hashPassword(req.Password)
+	if err != nil {
+		return err
+	}
 
-    user := entities.User{
+	user := entities.User{
 		Name:     req.Name,
 		Password: hashedPassword,
 		Status:   0,
 		Groups:   nil,
 	}
 
-    err = u.userRepo.Create(context.Background(), &user)
-    if err != nil {
-        return err
-    }
+	err = u.userRepo.Create(context.Background(), &user)
+	if err != nil {
+		return err
+	}
 
-
-
-    return nil
+	return nil
 }
 
 func (u *UserService) ActivateUser(req models.SignUpRequest) error {
@@ -80,11 +100,11 @@ func (u *UserService) ActivateUser(req models.SignUpRequest) error {
 }
 
 func hashPassword(password string) (string, error) {
-    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-    if err != nil {
-        return "", err
-    }
-    return string(hashedPassword), nil
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPassword), nil
 }
 
 // TODO: Infra layer code.

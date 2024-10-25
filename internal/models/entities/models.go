@@ -9,7 +9,13 @@ type Group struct {
 	ID     primitive.ObjectID `bson:"_id,omitempty"`
 	Name   string             `json:"name"`
 	Status int                `json:"status"`
-	Users  []User             `json:"users"`
+	Tasks  *[]Task            `json:"tasks,omitempty"`
+}
+
+type GroupMembers struct {
+	ID      primitive.ObjectID `bson:"_id,omitempty"`
+	UserID  primitive.ObjectID `bson:"_id"`
+	GroupID primitive.ObjectID `bson:"_id"`
 }
 
 // User represents a user of the system.
@@ -19,29 +25,32 @@ type User struct {
 	Password string             `json:"-"`
 	Status   int                `json:"status"`
 	Groups   []Group            `json:"groups"`
-}
-
-// AIModel represents an AI model's metadata.
-type AIModel struct {
-	Name    string `json:"name"`
-	Address string `json:"address"`
-	Status  int    `json:"status"`
+	Tasks    []primitive.ObjectID           `json:"tasks,omitempty"`
 }
 
 // RefereeModel represents a model used by referees.
 type RefereeModel struct {
+	ID      primitive.ObjectID `bson:"_id,omitempty"`
+	Name    string             `json:"name"`
+	Address string             `json:"address"`
+	Status  int                `json:"status"`
 	ModelID primitive.ObjectID `json:"model_id"`
 	Token   string             `json:"token,omitempty"`
 }
 
 // TargetModel represents the target model for processing.
 type TargetModel struct {
-	ModelID primitive.ObjectID `json:"model_id"`
-	Token   string             `json:"token"`
+	ID       primitive.ObjectID `bson:"_id,omitempty"`
+	Provider string             `json:"provider"`
+	Name     string             `json:"name"`
+	Address  string             `json:"address"`
+	Status   int                `json:"status"`
+	Token    string             `json:"token"`
 }
 
 // Usage records token consumption for users.
 type Usage struct {
+	ID                     primitive.ObjectID `json:"_id"`
 	UserID                 primitive.ObjectID `json:"user_id"`
 	TargetModelID          primitive.ObjectID `json:"target_model_id"`
 	InputTokenConsumption  int                `json:"input_token_consumption"`
@@ -50,25 +59,9 @@ type Usage struct {
 
 // Task represents a task that can be used in the pipeline.
 type Task struct {
-	Type string `json:"type"`
-}
-
-// Pipeline contains the related processing tasks for each
-type Pipeline struct {
-	UserTasks  *[]UserTask  `json:"user_tasks,omitempty"`
-	GroupTasks *[]GroupTask `json:"group_tasks,omitempty"`
-}
-
-// UserTask links a user to a task.
-type UserTask struct {
-	UserID primitive.ObjectID `json:"user_id"`
-	Task   Task               `json:"task"`
-}
-
-// GroupTask links a group to a task.
-type GroupTask struct {
-	GroupID primitive.ObjectID `json:"group_id"`
-	Task    Task               `json:"task"`
+	ID     primitive.ObjectID `json:"_id"`
+	Type   string             `json:"type"`
+	Status int                `json:"status"`
 }
 
 // TaskResult represents the result of task in the task pipeline
