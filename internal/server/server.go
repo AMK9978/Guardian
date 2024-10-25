@@ -64,14 +64,14 @@ func setupRoutes(router *chi.Mux) {
 	})
 
 	authController := setup.InitializeAuthController(mongodb.Database)
-	controller := setup.InitializeSendHandlerController(mongodb.Database)
+	sendController := setup.InitializeSendHandlerController(mongodb.Database)
 
 	addAuthRoutes(router, authController)
 	setupRateLimiter(router)
 
 	router.Group(func(protected chi.Router) {
 		protected.Use(guardianMiddleware.VerifyJWT)
-		addProtectedRoutes(protected, authController, controller)
+		addProtectedRoutes(protected, authController, sendController)
 	})
 }
 

@@ -35,7 +35,6 @@ func (u *TaskRepository) GetTasks(ctx context.Context, taskIDs []primitive.Objec
 	return tasks, nil
 }
 
-
 func (u *TaskRepository) GetTask(ctx context.Context, taskID primitive.ObjectID) (entities.Task, error) {
 	var task entities.Task
 	cursor, err := u.collection.Find(ctx, bson.D{{"_id", taskID}})

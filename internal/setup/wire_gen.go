@@ -17,28 +17,30 @@ import (
 // Injectors from wire.go:
 
 func InitializeSendHandlerController(db *mongo.Database) *api.SendHandlerController {
-	userTaskRepository := repository.NewUserTasksRepository(db)
-	userTaskService := NewUserTaskService(userTaskRepository)
-	promptService := services.NewPromptService(userTaskService)
+	userRepository := repository.NewUserRepository(db)
+	taskRepository := repository.NewTaskRepository(db)
+	userService := NewUserService(userRepository, taskRepository)
+	promptService := services.NewPromptService(userService)
 	sendHandlerController := api.NewSendHandlerController(promptService)
 	return sendHandlerController
 }
 
 func InitializeAuthController(db *mongo.Database) *api.AuthController {
 	userRepository := repository.NewUserRepository(db)
-	userService := services.NewUserService(userRepository)
+	taskRepository := repository.NewTaskRepository(db)
+	userService := services.NewUserService(userRepository, taskRepository)
 	authController := api.NewAuthController(userService)
 	return authController
 }
 
 // wire.go:
 
-func NewUserTaskService(userTaskRepo *repository.UserTaskRepository) *services.UserTaskService {
-	return services.NewUserTaskService(userTaskRepo)
+func NewUserService(userRepo *repository.UserRepository, taskRepo *repository.TaskRepository) *services.UserService {
+	return services.NewUserService(userRepo, taskRepo)
 }
 
-var UserTaskServiceSet = wire.NewSet(
-	NewUserTaskService, wire.Bind(new(services.UserTaskServiceInterface), new(*services.UserTaskService)),
+var UserServiceSet = wire.NewSet(
+	NewUserService, wire.Bind(new(services.UserServiceInterface), new(*services.UserService)),
 )
 
-var SendHandlerSet = wire.NewSet(api.NewSendHandlerController, services.NewPromptService, UserTaskServiceSet, repository.NewUserTasksRepository)
+var SendHandlerSet = wire.NewSet(api.NewSendHandlerController, services.NewPromptService, UserServiceSet, repository.NewTaskRepository)

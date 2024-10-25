@@ -20,12 +20,12 @@ type GroupMembers struct {
 
 // User represents a user of the system.
 type User struct {
-	ID       primitive.ObjectID `bson:"_id,omitempty"`
-	Name     string             `json:"name"`
-	Password string             `json:"-"`
-	Status   int                `json:"status"`
-	Groups   []Group            `json:"groups"`
-	Tasks    []primitive.ObjectID           `json:"tasks,omitempty"`
+	ID       primitive.ObjectID   `bson:"_id,omitempty"`
+	Name     string               `json:"name"`
+	Password string               `json:"-"`
+	Status   int                  `json:"status"`
+	Groups   []Group              `json:"groups"`
+	Tasks    []primitive.ObjectID `json:"tasks,omitempty"`
 }
 
 // RefereeModel represents a model used by referees.
@@ -59,9 +59,10 @@ type Usage struct {
 
 // Task represents a task that can be used in the pipeline.
 type Task struct {
-	ID     primitive.ObjectID `json:"_id"`
-	Type   string             `json:"type"`
-	Status int                `json:"status"`
+	ID      primitive.ObjectID `json:"_id"`
+	Type    string             `json:"type"`
+	Status  int                `json:"status"`
+	Address string             `json:"address"`
 }
 
 // TaskResult represents the result of task in the task pipeline

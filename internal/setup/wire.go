@@ -11,24 +11,24 @@ import (
 	"guardian/internal/services"
 )
 
-func NewUserTaskService(userTaskRepo *repository.UserTaskRepository) *services.UserTaskService {
-    return services.NewUserTaskService(userTaskRepo)
+func NewUserService(userRepo *repository.UserRepository, taskRepo *repository.TaskRepository) *services.UserService {
+    return services.NewUserService(userRepo, taskRepo)
 }
 
-var UserTaskServiceSet = wire.NewSet(
-    NewUserTaskService,
-    wire.Bind(new(services.UserTaskServiceInterface), new(*services.UserTaskService)),
+var UserServiceSet = wire.NewSet(
+    NewUserService,
+    wire.Bind(new(services.UserServiceInterface), new(*services.UserService)),
 )
 
 var SendHandlerSet = wire.NewSet(
     api.NewSendHandlerController,
     services.NewPromptService,
-    UserTaskServiceSet,
-    repository.NewUserTasksRepository,
+    UserServiceSet,
+    repository.NewTaskRepository,
 )
 
 func InitializeSendHandlerController(db *mongo.Database) *api.SendHandlerController {
-	wire.Build(SendHandlerSet)
+	wire.Build(repository.NewUserRepository, SendHandlerSet)
     return nil
 }
 
