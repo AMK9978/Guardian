@@ -1,16 +1,15 @@
 package configs
 
 import (
+	"log"
+	"runtime"
+	"time"
+
+	"guardian/utlis/logger"
+
 	"github.com/MicahParks/keyfunc"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/spf13/viper"
-
-	"guardian/utlis/logger"
-	"log"
-	"os"
-	"runtime"
-	"strconv"
-	"time"
 )
 
 var GlobalConfig Config
@@ -43,7 +42,8 @@ type Config struct {
 	MongoDBURI             string
 	RabbitMQURI            string
 	MilvusURI              string
-	ServerPort             string
+	ServerPort             int
+	MetricServerPort       int
 	PrimaryDBName          string
 	CollectionNames        *Collections
 	PipelineWorkerPoolSize int
@@ -61,25 +61,24 @@ type Config struct {
 }
 
 func LoadConfig() Config {
-	numWorkersStr := getEnv("PIPELINE_WORKER_POOL_SIZE", strconv.Itoa(runtime.NumCPU()))
-	numWorkers, err := strconv.Atoi(numWorkersStr)
-	if err != nil {
-		logger.GetLogger().Fatalf("coudn't convert the worker pool size to int: %s", numWorkersStr)
-	}
-
 	viper.AddConfigPath(".")
 	viper.SetConfigName(".env")
 	viper.SetConfigType("yaml")
-	err = viper.ReadInConfig()
-
+	err := viper.ReadInConfig()
 	if err != nil {
 		log.Fatalf("Error while reading config file %s", err)
-	} else {
-
 	}
 
-	secretKey := viper.GetString("JWT_SECRET_KEY")
-	tokenAuth := jwtauth.New("HS256", []byte(secretKey), nil)
+	viper.SetDefault("PIPELINE_WORKER_POOL_SIZE", runtime.NumCPU())
+
+	viper.SetDefault("REDIS_ADDR", "localhost:6379")
+	viper.SetDefault("MONGODB_URI", "mongodb://localhost:27017")
+	viper.SetDefault("RABBITMQ_URI", "amqp://guest:guest@localhost:5672/")
+	viper.SetDefault("MILVUS_URI", "localhost:19530")
+
+	viper.SetDefault("SERVER_PORT", 8080)
+	viper.SetDefault("METRIC_SERVER_PORT", 8081)
+	viper.SetDefault("PRIMARY_DB_NAME", "primary")
 
 	viper.SetDefault("TOKEN_EXP_TIME", 72)
 	viper.SetDefault("ACTIVATION_TOKEN_EXP_TIME", 72)
@@ -88,6 +87,11 @@ func LoadConfig() Config {
 	viper.SetDefault("REQUEST_LIMIT", 10)
 	viper.SetDefault("RATE_INTERVAL", 1)
 
+	viper.SetDefault("EXTERNAL_JWT_ISSUER", "")
+	viper.SetDefault("EXTERNAL_JWT_AUDIENCE", "")
+
+	secretKey := viper.GetString("JWT_SECRET_KEY")
+	tokenAuth := jwtauth.New("HS256", []byte(secretKey), nil)
 	tokenExpTime := viper.GetInt("TOKEN_EXP_TIME")
 
 	activationSecretKey := viper.GetString("ACTIVATION_SECRET_KEY")
@@ -113,31 +117,25 @@ func LoadConfig() Config {
 	}
 
 	return Config{
-		RedisAddr:              getEnv("REDIS_ADDR", "localhost:6379"),
-		MongoDBURI:             getEnv("MONGODB_URI", "mongodb://localhost:27017"),
-		RabbitMQURI:            getEnv("RABBITMQ_URI", "amqp://guest:guest@localhost:5672/"),
-		MilvusURI:              getEnv("MILVUS_URI", "localhost:19530"),
-		ServerPort:             getEnv("SERVER_PORT", "8081"),
-		PrimaryDBName:          getEnv("PRIMARY_DB_NAME", "primary"),
+		RedisAddr:              viper.GetString("REDIS_ADDR"),
+		MongoDBURI:             viper.GetString("MONGODB_URI"),
+		RabbitMQURI:            viper.GetString("RABBITMQ_URI"),
+		MilvusURI:              viper.GetString("MILVUS_URI"),
+		ServerPort:             viper.GetInt("SERVER_PORT"),
+		MetricServerPort:       viper.GetInt("METRIC_SERVER_PORT"),
+		PrimaryDBName:          viper.GetString("PRIMARY_DB_NAME"),
 		TokenAuth:              tokenAuth,
 		ActivationTokenKey:     activationSecretKey,
 		TokenExpirationTime:    time.Hour * time.Duration(tokenExpTime),
 		ActivationTokenExpTime: time.Hour * time.Duration(activationTokenExpTime),
-		PipelineWorkerPoolSize: numWorkers,
+		PipelineWorkerPoolSize: viper.GetInt("PIPELINE_WORKER_POOL_SIZE"),
 		CollectionNames:        NewCollections(),
 		EnableRateLimiter:      rateLimiterStatus,
 		Interval:               time.Minute * time.Duration(rateInterval),
 		RequestLimit:           requestLimit,
 		Jwk:                    jwks,
-		ExternalJwtIssuer:      getEnv("EXTERNAL_JWT_ISSUER", ""),
-		ExternalJwtAudience:    getEnv("EXTERNAL_JWT_AUDIENCE", ""),
+		ExternalJwtIssuer:      viper.GetString("EXTERNAL_JWT_ISSUER"),
+		ExternalJwtAudience:    viper.GetString("EXTERNAL_JWT_AUDIENCE"),
 		EnableExternalAuth:     externalAuthStatus,
 	}
-}
-
-func getEnv(key, defaultValue string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
-	}
-	return defaultValue
 }
