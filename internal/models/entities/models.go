@@ -22,6 +22,7 @@ type GroupMembers struct {
 type User struct {
 	ID       primitive.ObjectID   `bson:"_id,omitempty"`
 	Name     string               `json:"name"`
+	Email    string               `json:"email"`
 	Password string               `json:"-"`
 	Status   int                  `json:"status"`
 	Groups   []Group              `json:"groups"`
@@ -30,12 +31,12 @@ type User struct {
 
 // RefereeModel represents a model used by referees.
 type RefereeModel struct {
-	ID      primitive.ObjectID `bson:"_id,omitempty"`
-	Name    string             `json:"name"`
-	Address string             `json:"address"`
-	Status  int                `json:"status"`
-	ModelID primitive.ObjectID `json:"model_id"`
-	Token   string             `json:"token,omitempty"`
+	ID       primitive.ObjectID `bson:"_id,omitempty"`
+	Name     string             `json:"name"`
+	Provider string             `json:"provider"`
+	Address  string             `json:"address"`
+	Status   int                `json:"status"`
+	Token    string             `json:"token,omitempty"`
 }
 
 // TargetModel represents the target model for processing.

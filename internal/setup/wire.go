@@ -28,7 +28,8 @@ var SendHandlerSet = wire.NewSet(
 )
 
 func InitializeSendHandlerController(db *mongo.Database) *api.SendHandlerController {
-	wire.Build(repository.NewUserRepository, SendHandlerSet)
+	wire.Build(repository.NewUserRepository, repository.NewTargetModelRepository,  SendHandlerSet,
+		services.NewTargetModelService)
     return nil
 }
 

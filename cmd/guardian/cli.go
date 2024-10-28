@@ -5,7 +5,6 @@ import (
 	"guardian/configs"
 	"guardian/internal/metrics"
 	"guardian/internal/mongodb"
-	"guardian/internal/redis"
 	"guardian/internal/server"
 	"guardian/utlis/logger"
 	"net/http"
@@ -34,7 +33,7 @@ func init() {
 		}
 	}()
 
-	redis.Init(configs.GlobalConfig.RedisAddr)
+	//redis.Init(configs.GlobalConfig.RedisAddr)
 	//rabbitMQClient := rabbitmq.NewClient(cfg.RabbitMQURI)
 	mongodb.Init()
 

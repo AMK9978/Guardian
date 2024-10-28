@@ -2,13 +2,12 @@ package repository
 
 import (
 	"context"
+	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-
+	"go.mongodb.org/mongo-driver/mongo"
 	"guardian/configs"
 	"guardian/internal/models/entities"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type TaskRepository struct {
@@ -28,10 +27,12 @@ func (u *TaskRepository) GetTasks(ctx context.Context, taskIDs []primitive.Objec
 	filter := bson.M{"_id": bson.M{"$in": taskIDs}}
 	cursor, err := u.collection.Find(ctx, filter)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("error in GetTasks: %v", err)
 	}
 	err = cursor.All(ctx, &tasks)
-
+	if err != nil {
+		return nil, errors.Errorf("error in fetching tasks: %v", err)
+	}
 	return tasks, nil
 }
 
@@ -47,7 +48,7 @@ func (u *TaskRepository) GetTask(ctx context.Context, taskID primitive.ObjectID)
 
 func (u *TaskRepository) CreateTask(ctx context.Context, task entities.Task) (interface{}, error) {
 	cursor, err := u.collection.InsertOne(ctx, bson.D{{"type", task.Type},
-		{"status", task.Status}})
+		{"status", task.Status}, {"address", task.Address}})
 	if err != nil {
 		return nil, err
 	}

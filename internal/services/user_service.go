@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"guardian/configs"
@@ -38,7 +39,7 @@ func NewUserService(userRepo *repository.UserRepository, taskRepo *repository.Ta
 func (u *UserService) GetUser(id primitive.ObjectID) (*entities.User, error) {
 	user, err := u.userRepo.GetByFilter(context.Background(), bson.M{"_id": id})
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("error in GetUser:%v", err)
 	}
 	return user, nil
 }
@@ -46,7 +47,10 @@ func (u *UserService) GetUser(id primitive.ObjectID) (*entities.User, error) {
 func (u *UserService) GetUserTasksByID(userID primitive.ObjectID) ([]entities.Task, error) {
 	user, err := u.GetUser(userID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("user error:%v", userID)
+	}
+	if user.Tasks == nil {
+		return []entities.Task{}, nil
 	}
 	tasks, err := u.taskRepo.GetTasks(context.Background(), user.Tasks)
 	return tasks, err
@@ -82,6 +86,7 @@ func (u *UserService) SignUp(req models.SignUpRequest) error {
 
 	user := entities.User{
 		Name:     req.Name,
+		Email:    req.Email,
 		Password: hashedPassword,
 		Status:   0,
 		Groups:   nil,

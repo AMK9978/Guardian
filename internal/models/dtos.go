@@ -2,7 +2,6 @@ package models
 
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"guardian/internal/models/entities"
 )
 
 type LoginRequest struct {
@@ -18,15 +17,15 @@ type SignUpRequest struct {
 
 // SendRequest represents a request to send a prompt.
 type SendRequest struct {
-	UserID primitive.ObjectID   `json:"user_id"`
-	ChatID *primitive.ObjectID  `json:"chat_id,omitempty"`
-	Prompt string               `json:"prompt"`
-	Target entities.TargetModel `json:"target"`
+	// TODO: Remove the userID and use GetUser() based on JWT
+	UserID   primitive.ObjectID  `json:"user_id"`
+	ChatID   *primitive.ObjectID `json:"chat_id,omitempty"`
+	Prompt   string              `json:"prompt"`
+	TargetID primitive.ObjectID  `json:"target_id"`
 }
 
 // SendResponse represents the response from a send operation.
 type SendResponse struct {
-	Success bool                 `json:"success"`
-	Status  string               `json:"status"`
-	Target  entities.TargetModel `json:"target,omitempty"`
+	Success bool   `json:"success"`
+	Status  string `json:"status"`
 }

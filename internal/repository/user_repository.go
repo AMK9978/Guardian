@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"guardian/configs"
 	"guardian/internal/models/entities"
@@ -23,14 +24,13 @@ func NewUserRepository(db *mongo.Database) *UserRepository {
 	}
 }
 
-func (u *UserRepository) GetUser(ctx context.Context, userID uuid.UUID) (entities.User, error) {
+func (u *UserRepository) GetUser(ctx context.Context, userID primitive.ObjectID) (*entities.User, error) {
 	var user entities.User
-	cursor, err := u.collection.Find(ctx, bson.D{{"_id", userID}})
+	err := u.collection.FindOne(ctx, bson.D{{"_id", userID}}).Decode(&user)
 	if err != nil {
-		return entities.User{}, err
+		return nil, err
 	}
-	err = cursor.All(ctx, &user)
-	return user, err
+	return &user, err
 }
 
 func (u *UserRepository) CreateUser(ctx context.Context, user entities.User) (interface{}, error) {

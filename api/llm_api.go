@@ -13,12 +13,15 @@ import (
 )
 
 type SendHandlerController struct {
-	promptService services.PromptServiceInterface
+	promptService      services.PromptServiceInterface
+	targetModelService *services.TargetModelService
 }
 
-func NewSendHandlerController(promptService *services.PromptService) *SendHandlerController {
+func NewSendHandlerController(promptService *services.PromptService,
+	targetModelService *services.TargetModelService) *SendHandlerController {
 	return &SendHandlerController{
-		promptService: promptService,
+		promptService:      promptService,
+		targetModelService: targetModelService,
 	}
 }
 
@@ -32,11 +35,18 @@ func (h *SendHandlerController) SendHandler(w http.ResponseWriter, r *http.Reque
 	var req models.SendRequest
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		logger.GetLogger().Errorf("error in sendhandler %v", err)
 		logger.GetLogger().Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	req.UserID = *userID
+	targetLLM, err := h.targetModelService.GetTargetModel(req.TargetID)
+	if err != nil {
+		logger.GetLogger().Errorf("error in resolving the target LLM %v", err)
+		logger.GetLogger().Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
 
 	result, err := h.promptService.ProcessPrompt(req, r)
 	if err != nil {
@@ -54,7 +64,7 @@ func (h *SendHandlerController) SendHandler(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	newReq, err := http.NewRequestWithContext(r.Context(), r.Method, req.Target.Address, r.Body)
+	newReq, err := http.NewRequestWithContext(r.Context(), r.Method, targetLLM.Address, r.Body)
 	if err != nil {
 		logger.GetLogger().Error(w, "Internal server error", http.StatusInternalServerError)
 		return

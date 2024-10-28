@@ -3,7 +3,10 @@ package configs
 import (
 	"github.com/MicahParks/keyfunc"
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/spf13/viper"
+
 	"guardian/utlis/logger"
+	"log"
 	"os"
 	"runtime"
 	"strconv"
@@ -17,19 +20,21 @@ func init() {
 }
 
 type Collections struct {
-	User    string
-	Task    string
-	Group   string
-	AIModel string
+	User         string
+	Task         string
+	Group        string
+	TargetModel  string
+	RefereeModel string
 }
 
 // NewCollections initializes the collection names.
 func NewCollections() *Collections {
 	return &Collections{
-		User:    "users",
-		Task:    "tasks",
-		Group:   "groups",
-		AIModel: "ai_models",
+		User:         "users",
+		Task:         "tasks",
+		Group:        "groups",
+		TargetModel:  "target_models",
+		RefereeModel: "referee_models",
 	}
 }
 
@@ -62,42 +67,43 @@ func LoadConfig() Config {
 		logger.GetLogger().Fatalf("coudn't convert the worker pool size to int: %s", numWorkersStr)
 	}
 
-	secretKey := getEnv("JWT_SECRET_KEY", "")
+	viper.AddConfigPath(".")
+	viper.SetConfigName(".env")
+	viper.SetConfigType("yaml")
+	err = viper.ReadInConfig()
+
+	if err != nil {
+		log.Fatalf("Error while reading config file %s", err)
+	} else {
+
+	}
+
+	secretKey := viper.GetString("JWT_SECRET_KEY")
 	tokenAuth := jwtauth.New("HS256", []byte(secretKey), nil)
-	tokenExpTimeStr := getEnv("TOKEN_EXP_TIME", "72")
-	tokenExpTime, err := strconv.Atoi(tokenExpTimeStr)
 
-	activationSecretKey := getEnv("ACTIVATION_SECRET_KEY", "")
-	activationTokenExpTimeStr := getEnv("ACTIVATION_TOKEN_EXP_TIME", "72")
-	activationTokenExpTime, err := strconv.Atoi(activationTokenExpTimeStr)
-	if err != nil {
-		logger.GetLogger().Fatalf("couldn't convert the token expiration time to int: %s", tokenExpTimeStr)
-	}
+	viper.SetDefault("TOKEN_EXP_TIME", 72)
+	viper.SetDefault("ACTIVATION_TOKEN_EXP_TIME", 72)
+	viper.SetDefault("RATE_LIMITER_STATUS", false)
+	viper.SetDefault("EXTERNAL_AUTH_STATUS", false)
+	viper.SetDefault("REQUEST_LIMIT", 10)
+	viper.SetDefault("RATE_INTERVAL", 1)
 
-	rateLimiterStatus, err := strconv.ParseBool(getEnv("RATE_LIMITER_STATUS", "false"))
-	if err != nil {
-		logger.GetLogger().Fatal("couldn't convert the rate limiter status to bool")
-	}
+	tokenExpTime := viper.GetInt("TOKEN_EXP_TIME")
 
-	externalAuthStatus, err := strconv.ParseBool(getEnv("EXTERNAL_AUTH_STATUS", "false"))
-	if err != nil {
-		logger.GetLogger().Fatal("couldn't convert the external auth status to bool")
-	}
+	activationSecretKey := viper.GetString("ACTIVATION_SECRET_KEY")
+	activationTokenExpTime := viper.GetInt("ACTIVATION_TOKEN_EXP_TIME")
+	rateLimiterStatus := viper.GetBool("RATE_LIMITER_STATUS")
+
+	externalAuthStatus := viper.GetBool("EXTERNAL_AUTH_STATUS")
 
 	rateInterval, requestLimit := -1, -1
 	if rateLimiterStatus {
-		requestLimit, err = strconv.Atoi(getEnv("REQUEST_LIMIT", "10"))
-		if err != nil {
-			logger.GetLogger().Fatal("couldn't convert the request limit to int")
-		}
-		rateInterval, err = strconv.Atoi(getEnv("RATE_INTERVAL", "1"))
-		if err != nil {
-			logger.GetLogger().Fatal("couldn't convert the rate interval time to int")
-		}
+		requestLimit = viper.GetInt("REQUEST_LIMIT")
+		rateInterval = viper.GetInt("RATE_INTERVAL")
 	}
 
 	var jwks *keyfunc.JWKS
-	jwksURL := getEnv("JWKS_URL", "")
+	jwksURL := viper.GetString("JWKS_URL")
 
 	if jwksURL != "" {
 		jwks, err = keyfunc.Get(jwksURL, keyfunc.Options{})
@@ -111,7 +117,7 @@ func LoadConfig() Config {
 		MongoDBURI:             getEnv("MONGODB_URI", "mongodb://localhost:27017"),
 		RabbitMQURI:            getEnv("RABBITMQ_URI", "amqp://guest:guest@localhost:5672/"),
 		MilvusURI:              getEnv("MILVUS_URI", "localhost:19530"),
-		ServerPort:             getEnv("SERVER_PORT", "8080"),
+		ServerPort:             getEnv("SERVER_PORT", "8081"),
 		PrimaryDBName:          getEnv("PRIMARY_DB_NAME", "primary"),
 		TokenAuth:              tokenAuth,
 		ActivationTokenKey:     activationSecretKey,

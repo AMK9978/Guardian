@@ -32,7 +32,7 @@ func (p *PromptService) ProcessPrompt(req models.SendRequest, r *http.Request) (
 		return false, errors.New("empty prompt")
 	}
 
-	if p.pipeline(req, r) {
+	if !p.pipeline(req, r) {
 		return false, nil
 	}
 
@@ -42,7 +42,7 @@ func (p *PromptService) ProcessPrompt(req models.SendRequest, r *http.Request) (
 func (p *PromptService) pipeline(req models.SendRequest, r *http.Request) bool {
 	tasks, err := p.userService.GetUserTasksByID(req.UserID)
 	if err != nil {
-		logger.GetLogger().Error(err)
+		logger.GetLogger().Errorf("err in pipeline: %v", err)
 		return false
 	}
 
@@ -51,11 +51,11 @@ func (p *PromptService) pipeline(req models.SendRequest, r *http.Request) bool {
 	taskChan := make(chan entities.Task, len(tasks))
 	resultsChan := make(chan entities.TaskResult, len(tasks))
 	quit := make(chan struct{})
-
+	var closeQuitOnce sync.Once
 	var wg sync.WaitGroup
 	for i := 0; i < workerPoolSize; i++ {
 		wg.Add(1)
-		go p.worker(taskChan, resultsChan, quit, r, &wg)
+		go p.worker(taskChan, resultsChan, quit, r, &wg, &closeQuitOnce)
 	}
 
 	for _, task := range tasks {
@@ -81,7 +81,7 @@ func (p *PromptService) pipeline(req models.SendRequest, r *http.Request) bool {
 }
 
 func (p *PromptService) worker(taskChan chan entities.Task, resultsChan chan entities.TaskResult, quit chan struct{},
-	r *http.Request, wg *sync.WaitGroup) {
+	r *http.Request, wg *sync.WaitGroup, closeQuitOnce *sync.Once) {
 	defer wg.Done()
 
 	for {
@@ -95,13 +95,17 @@ func (p *PromptService) worker(taskChan chan entities.Task, resultsChan chan ent
 			result, err := p.forwardRequest(r, task.Address)
 			if err != nil {
 				resultsChan <- entities.TaskResult{TaskType: taskType, Success: false, Err: err}
-				close(quit)
+				closeQuitOnce.Do(func() {
+					close(quit)
+				})
 				return
 			}
 
 			if !result.Success {
 				resultsChan <- entities.TaskResult{TaskType: taskType, Success: false}
-				close(quit)
+				closeQuitOnce.Do(func() {
+					close(quit)
+				})
 				return
 			}
 

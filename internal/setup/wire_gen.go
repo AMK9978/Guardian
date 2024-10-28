@@ -21,7 +21,9 @@ func InitializeSendHandlerController(db *mongo.Database) *api.SendHandlerControl
 	taskRepository := repository.NewTaskRepository(db)
 	userService := NewUserService(userRepository, taskRepository)
 	promptService := services.NewPromptService(userService)
-	sendHandlerController := api.NewSendHandlerController(promptService)
+	targetModelRepository := repository.NewTargetModelRepository(db)
+	targetModelService := services.NewTargetModelService(targetModelRepository)
+	sendHandlerController := api.NewSendHandlerController(promptService, targetModelService)
 	return sendHandlerController
 }
 
