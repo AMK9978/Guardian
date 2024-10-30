@@ -14,10 +14,6 @@ import (
 
 var GlobalConfig Config
 
-func init() {
-	GlobalConfig = LoadConfig()
-}
-
 type Collections struct {
 	User         string
 	Task         string

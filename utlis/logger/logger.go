@@ -8,6 +8,10 @@ import (
 
 var log *logrus.Logger
 
+func init() {
+	InitLogger()
+}
+
 func InitLogger() {
 	log = logrus.New()
 

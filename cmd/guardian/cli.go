@@ -24,6 +24,8 @@ func Execute() error {
 func init() {
 	logger.InitLogger()
 
+	configs.GlobalConfig = configs.LoadConfig()
+
 	metrics.Init()
 	go func() {
 		logger.GetLogger().Infof("Starting metrics server on :%s", configs.GlobalConfig.ServerPort)
