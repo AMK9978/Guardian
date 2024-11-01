@@ -53,18 +53,13 @@ func (h *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error in sign up", http.StatusInternalServerError)
 		return
 	}
-
 }
 
 func (h *AuthController) DeleteUser(w http.ResponseWriter, r *http.Request) {
-
 }
 
 func (h *AuthController) ActivateUser(w http.ResponseWriter, r *http.Request) {
-
 }
 
 func (h *AuthController) UpdateUser(w http.ResponseWriter, r *http.Request) {
-
 }
-

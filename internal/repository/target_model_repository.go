@@ -2,12 +2,14 @@ package repository
 
 import (
 	"context"
+
+	"guardian/configs"
+	"guardian/internal/models/entities"
+
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"guardian/configs"
-	"guardian/internal/models/entities"
 )
 
 type TargetModelRepository struct {
@@ -22,7 +24,8 @@ func NewTargetModelRepository(db *mongo.Database) *TargetModelRepository {
 }
 
 func (u *TargetModelRepository) GetModels(ctx context.Context, modelIDs []primitive.ObjectID) ([]entities.TargetModel,
-	error) {
+	error,
+) {
 	var models []entities.TargetModel
 
 	filter := bson.M{"_id": bson.M{"$in": modelIDs}}
@@ -38,7 +41,8 @@ func (u *TargetModelRepository) GetModels(ctx context.Context, modelIDs []primit
 }
 
 func (u *TargetModelRepository) GetModel(ctx context.Context, modelID primitive.ObjectID) (*entities.TargetModel,
-	error) {
+	error,
+) {
 	var model entities.TargetModel
 	err := u.collection.FindOne(ctx, bson.D{{"_id", modelID}}).Decode(&model)
 	if err != nil {
@@ -48,9 +52,13 @@ func (u *TargetModelRepository) GetModel(ctx context.Context, modelID primitive.
 }
 
 func (u *TargetModelRepository) CreateModel(ctx context.Context, model entities.TargetModel) (interface{}, error) {
-	cursor, err := u.collection.InsertOne(ctx, bson.D{{"name", model.Name},
-		{"status", model.Status}, {"address", model.Address},
-		{"provider", model.Provider}, {"token", model.Token}})
+	cursor, err := u.collection.InsertOne(ctx, bson.D{
+		{"name", model.Name},
+		{"status", model.Status},
+		{"address", model.Address},
+		{"provider", model.Provider},
+		{"token", model.Token},
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -54,6 +54,7 @@ type Config struct {
 	ExternalJwtIssuer      string
 	ExternalJwtAudience    string
 	EnableExternalAuth     bool
+	HttpClientTimeout      time.Duration
 }
 
 func LoadConfig() Config {
@@ -85,6 +86,8 @@ func LoadConfig() Config {
 
 	viper.SetDefault("EXTERNAL_JWT_ISSUER", "")
 	viper.SetDefault("EXTERNAL_JWT_AUDIENCE", "")
+
+	viper.SetDefault("HTTP_CLIENT_TIMEOUT", 10)
 
 	secretKey := viper.GetString("JWT_SECRET_KEY")
 	tokenAuth := jwtauth.New("HS256", []byte(secretKey), nil)
@@ -133,5 +136,6 @@ func LoadConfig() Config {
 		ExternalJwtIssuer:      viper.GetString("EXTERNAL_JWT_ISSUER"),
 		ExternalJwtAudience:    viper.GetString("EXTERNAL_JWT_AUDIENCE"),
 		EnableExternalAuth:     externalAuthStatus,
+		HttpClientTimeout:      time.Duration(viper.GetInt("HTTP_CLIENT_TIMEOUT")) * time.Second,
 	}
 }

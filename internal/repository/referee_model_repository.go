@@ -2,12 +2,14 @@ package repository
 
 import (
 	"context"
+
+	"guardian/configs"
+	"guardian/internal/models/entities"
+
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"guardian/configs"
-	"guardian/internal/models/entities"
 )
 
 type RefereeModelRepository struct {
@@ -22,7 +24,8 @@ func NewRefereeModelRepository(db *mongo.Database) *RefereeModelRepository {
 }
 
 func (u *TaskRepository) GetRefereeModels(ctx context.Context, modelIDs []primitive.ObjectID) ([]entities.RefereeModel,
-	error) {
+	error,
+) {
 	var models []entities.RefereeModel
 
 	filter := bson.M{"_id": bson.M{"$in": modelIDs}}
@@ -38,7 +41,8 @@ func (u *TaskRepository) GetRefereeModels(ctx context.Context, modelIDs []primit
 }
 
 func (u *TaskRepository) GetRefereeModel(ctx context.Context, modelID primitive.ObjectID) (entities.RefereeModel,
-	error) {
+	error,
+) {
 	var model entities.RefereeModel
 	cursor, err := u.collection.Find(ctx, bson.D{{"_id", modelID}})
 	if err != nil {
@@ -49,9 +53,13 @@ func (u *TaskRepository) GetRefereeModel(ctx context.Context, modelID primitive.
 }
 
 func (u *TaskRepository) CreateRefereeModel(ctx context.Context, model entities.RefereeModel) (interface{}, error) {
-	cursor, err := u.collection.InsertOne(ctx, bson.D{{"name", model.Name},
-		{"status", model.Status}, {"address", model.Address},
-		{"provider", model.Provider}, {"token", model.Token}})
+	cursor, err := u.collection.InsertOne(ctx, bson.D{
+		{"name", model.Name},
+		{"status", model.Status},
+		{"address", model.Address},
+		{"provider", model.Provider},
+		{"token", model.Token},
+	})
 	if err != nil {
 		return nil, err
 	}

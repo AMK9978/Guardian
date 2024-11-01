@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"guardian/cmd/guardian"
 	"os"
+
+	"guardian/cmd/guardian"
 )
 
 func main() {

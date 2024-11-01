@@ -7,11 +7,12 @@
 package setup
 
 import (
-	"github.com/google/wire"
-	"go.mongodb.org/mongo-driver/mongo"
 	"guardian/api"
 	"guardian/internal/repository"
 	"guardian/internal/services"
+
+	"github.com/google/wire"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Injectors from wire.go:
@@ -20,7 +21,8 @@ func InitializeSendHandlerController(db *mongo.Database) *api.SendHandlerControl
 	userRepository := repository.NewUserRepository(db)
 	taskRepository := repository.NewTaskRepository(db)
 	userService := NewUserService(userRepository, taskRepository)
-	promptService := services.NewPromptService(userService)
+	client := services.NewHTTPClientProvider()
+	promptService := services.NewPromptService(userService, client)
 	targetModelRepository := repository.NewTargetModelRepository(db)
 	targetModelService := services.NewTargetModelService(targetModelRepository)
 	sendHandlerController := api.NewSendHandlerController(promptService, targetModelService)

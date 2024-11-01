@@ -3,10 +3,10 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"guardian/internal/middleware"
 	"io"
 	"net/http"
 
+	"guardian/internal/middleware"
 	"guardian/internal/models"
 	"guardian/internal/services"
 	"guardian/utlis/logger"
@@ -18,7 +18,8 @@ type SendHandlerController struct {
 }
 
 func NewSendHandlerController(promptService *services.PromptService,
-	targetModelService *services.TargetModelService) *SendHandlerController {
+	targetModelService *services.TargetModelService,
+) *SendHandlerController {
 	return &SendHandlerController{
 		promptService:      promptService,
 		targetModelService: targetModelService,
@@ -108,5 +109,4 @@ func forwardResponseToUser(w http.ResponseWriter, resp *http.Response) error {
 }
 
 func selectTargetLLM() {
-
 }

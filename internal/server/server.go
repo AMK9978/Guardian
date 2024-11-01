@@ -2,12 +2,12 @@ package server
 
 import (
 	"context"
-	guardianMiddleware "guardian/internal/middleware"
 	"net/http"
 	"time"
 
 	"guardian/api"
 	"guardian/configs"
+	guardianMiddleware "guardian/internal/middleware"
 	"guardian/internal/mongodb"
 	"guardian/internal/ratelimit"
 	redisClient "guardian/internal/redis"
@@ -89,8 +89,8 @@ func addAuthRoutes(router *chi.Mux, authController *api.AuthController) {
 }
 
 func addProtectedRoutes(protected chi.Router, authController *api.AuthController,
-	controller *api.SendHandlerController) {
-
+	controller *api.SendHandlerController,
+) {
 	protected.Put("/user/update", authController.UpdateUser)
 	protected.Patch("/user/activate", authController.ActivateUser)
 	protected.Delete("/user/delete", authController.DeleteUser)

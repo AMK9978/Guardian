@@ -1,11 +1,13 @@
 package ratelimit
 
 import (
-	"github.com/go-chi/jwtauth/v5"
-	"github.com/redis/go-redis/v9"
-	"guardian/configs"
 	"net/http"
 	"strconv"
+
+	"guardian/configs"
+
+	"github.com/go-chi/jwtauth/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 const (

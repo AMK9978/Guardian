@@ -2,12 +2,13 @@ package guardian
 
 import (
 	"fmt"
+	"net/http"
+
 	"guardian/configs"
 	"guardian/internal/metrics"
 	"guardian/internal/mongodb"
 	"guardian/internal/server"
 	"guardian/utlis/logger"
-	"net/http"
 
 	"github.com/spf13/cobra"
 )
@@ -35,11 +36,11 @@ func init() {
 		}
 	}()
 
-	//redis.Init(configs.GlobalConfig.RedisAddr)
-	//rabbitMQClient := rabbitmq.NewClient(cfg.RabbitMQURI)
+	// redis.Init(configs.GlobalConfig.RedisAddr)
+	// rabbitMQClient := rabbitmq.NewClient(cfg.RabbitMQURI)
 	mongodb.Init()
 
-	//milvus.NewClient(configs.GlobalConfig.MilvusURI)
+	// milvus.NewClient(configs.GlobalConfig.MilvusURI)
 
 	startServer()
 

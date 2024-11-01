@@ -2,12 +2,14 @@ package repository
 
 import (
 	"context"
+
+	"guardian/configs"
+	"guardian/internal/models/entities"
+
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"guardian/configs"
-	"guardian/internal/models/entities"
 )
 
 type TaskRepository struct {
@@ -47,8 +49,11 @@ func (u *TaskRepository) GetTask(ctx context.Context, taskID primitive.ObjectID)
 }
 
 func (u *TaskRepository) CreateTask(ctx context.Context, task entities.Task) (interface{}, error) {
-	cursor, err := u.collection.InsertOne(ctx, bson.D{{"type", task.Type},
-		{"status", task.Status}, {"address", task.Address}})
+	cursor, err := u.collection.InsertOne(ctx, bson.D{
+		{"type", task.Type},
+		{"status", task.Status},
+		{"address", task.Address},
+	})
 	if err != nil {
 		return nil, err
 	}

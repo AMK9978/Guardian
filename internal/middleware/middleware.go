@@ -3,17 +3,17 @@ package middleware
 import (
 	"errors"
 	"fmt"
-	"github.com/go-chi/jwtauth/v5"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"guardian/internal/models/entities"
-	"guardian/utlis/logger"
 	"net/http"
 	"strings"
 	"time"
 
 	"guardian/configs"
+	"guardian/internal/models/entities"
+	"guardian/utlis/logger"
 
+	"github.com/go-chi/jwtauth/v5"
 	"github.com/golang-jwt/jwt/v4"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func VerifyJWT(protected http.Handler) http.Handler {

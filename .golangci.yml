@@ -45,3 +45,6 @@ linters-settings:
 run:
   skip-dirs:
     - 'exp'
+
+exclude:
+  - vendor/.*

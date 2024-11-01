@@ -2,15 +2,14 @@ package repository
 
 import (
 	"context"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"guardian/configs"
 	"guardian/internal/models/entities"
 
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-
 )
 
 type UserRepository struct {

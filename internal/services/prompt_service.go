@@ -5,26 +5,43 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"sync"
+
 	"guardian/configs"
 	"guardian/internal/models"
 	"guardian/internal/models/entities"
 	"guardian/utlis/logger"
-	"net/http"
-	"sync"
-	"time"
+
+	"github.com/pkg/errors"
 )
 
 type PromptServiceInterface interface {
 	ProcessPrompt(ctx context.Context, reqBody *models.RefereeRequest) (bool, error)
 }
 
-type PromptService struct {
-	userService UserServiceInterface
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
-func NewPromptService(userService UserServiceInterface) *PromptService {
+func NewHTTPClientProvider() *http.Client {
+	return &http.Client{Timeout: configs.GlobalConfig.HttpClientTimeout}
+}
+
+type PromptService struct {
+	userService UserServiceInterface
+	client      HTTPClient
+}
+
+var (
+	ErrPluginResponseFailed = errors.New("failed to receive a response")
+	ErrForwardRequest       = errors.New("failed to forward request")
+)
+
+func NewPromptService(userService UserServiceInterface, client HTTPClient) *PromptService {
 	return &PromptService{
 		userService: userService,
+		client:      client,
 	}
 }
 
@@ -32,21 +49,25 @@ func (p *PromptService) ProcessPrompt(ctx context.Context, reqBody *models.Refer
 	if reqBody.Prompt == "" {
 		return false, nil
 	}
-	if !p.pipeline(ctx, reqBody) {
+	result, err := p.pipeline(ctx, reqBody)
+	if err != nil {
+		return false, err
+	}
+	if !result {
 		return false, nil
 	}
 
 	return true, nil
 }
 
-func (p *PromptService) pipeline(ctx context.Context, req *models.RefereeRequest) bool {
+func (p *PromptService) pipeline(ctx context.Context, req *models.RefereeRequest) (bool, error) {
 	tasks, err := p.userService.GetUserTasksByID(req.UserID)
 	if err != nil {
 		logger.GetLogger().Errorf("err in pipeline: %v", err)
-		return false
+		return false, err
 	}
 
-	workerPoolSize := configs.LoadConfig().PipelineWorkerPoolSize
+	workerPoolSize := configs.GlobalConfig.PipelineWorkerPoolSize
 
 	taskChan := make(chan entities.Task, len(tasks))
 	resultsChan := make(chan entities.TaskResult, len(tasks))
@@ -55,7 +76,7 @@ func (p *PromptService) pipeline(ctx context.Context, req *models.RefereeRequest
 	var wg sync.WaitGroup
 	for i := 0; i < workerPoolSize; i++ {
 		wg.Add(1)
-		go p.worker(taskChan, resultsChan, quit, ctx, req, &wg, &closeQuitOnce)
+		go p.worker(ctx, taskChan, resultsChan, quit, req, &wg, &closeQuitOnce)
 	}
 
 	for _, task := range tasks {
@@ -73,15 +94,16 @@ func (p *PromptService) pipeline(ctx context.Context, req *models.RefereeRequest
 
 		if !result.Success {
 			logger.GetLogger().Infof("task %s failed:", result.TaskType)
-			return false
+			return false, nil
 		}
 	}
 
-	return true
+	return true, nil
 }
 
-func (p *PromptService) worker(taskChan chan entities.Task, resultsChan chan entities.TaskResult, quit chan struct{},
-	ctx context.Context, reqBody *models.RefereeRequest, wg *sync.WaitGroup, closeQuitOnce *sync.Once) {
+func (p *PromptService) worker(ctx context.Context, taskChan chan entities.Task, resultsChan chan entities.TaskResult,
+	quit chan struct{}, reqBody *models.RefereeRequest, wg *sync.WaitGroup, closeQuitOnce *sync.Once,
+) {
 	defer wg.Done()
 
 	for {
@@ -118,8 +140,8 @@ func (p *PromptService) worker(taskChan chan entities.Task, resultsChan chan ent
 }
 
 func (p *PromptService) forwardRequest(ctx context.Context, taskAddress string,
-	reqBody *models.RefereeRequest) (*models.SendResponse, error) {
-
+	reqBody *models.RefereeRequest,
+) (*models.SendResponse, error) {
 	marshalledBody, err := json.Marshal(&reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshall the request body: %w", err)
@@ -131,13 +153,15 @@ func (p *PromptService) forwardRequest(ctx context.Context, taskAddress string,
 
 	newReq.Header.Set("Content-Type", "application/json")
 
-	// TODO: Use configs
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(newReq)
+	resp, err := p.client.Do(newReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to forward request: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrForwardRequest, err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%w from: %s", ErrPluginResponseFailed, taskAddress)
+	}
 
 	var sendResponse models.SendResponse
 	if err := json.NewDecoder(resp.Body).Decode(&sendResponse); err != nil {
