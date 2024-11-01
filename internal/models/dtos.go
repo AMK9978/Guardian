@@ -17,15 +17,20 @@ type SignUpRequest struct {
 
 // SendRequest represents a request to send a prompt.
 type SendRequest struct {
-	// TODO: Remove the userID and use GetUser() based on JWT
-	UserID   primitive.ObjectID  `json:"user_id"`
 	ChatID   *primitive.ObjectID `json:"chat_id,omitempty"`
 	Prompt   string              `json:"prompt"`
 	TargetID primitive.ObjectID  `json:"target_id"`
 }
 
+// RefereeRequest represents a request sending to the referee plugins
+type RefereeRequest struct {
+	UserID   primitive.ObjectID `json:"user_id"`
+	Chat     string             `json:"chat,omitempty"`
+	Prompt   string             `json:"prompt"`
+	TargetID primitive.ObjectID `json:"target_id"`
+}
+
 // SendResponse represents the response from a send operation.
 type SendResponse struct {
-	Success bool   `json:"success"`
-	Status  string `json:"status"`
+	Status bool `json:"status"`
 }

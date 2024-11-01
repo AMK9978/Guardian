@@ -32,30 +32,30 @@ func (h *SendHandlerController) SendHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var req models.SendRequest
-	err = json.NewDecoder(r.Body).Decode(&req)
+	var reqBody models.RefereeRequest
+	err = json.NewDecoder(r.Body).Decode(&reqBody)
 	if err != nil {
 		logger.GetLogger().Errorf("error in sendhandler %v", err)
 		logger.GetLogger().Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	req.UserID = *userID
-	targetLLM, err := h.targetModelService.GetTargetModel(req.TargetID)
+	reqBody.UserID = *userID
+	targetLLM, err := h.targetModelService.GetTargetModel(reqBody.TargetID)
 	if err != nil {
 		logger.GetLogger().Errorf("error in resolving the target LLM %v", err)
 		logger.GetLogger().Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	result, err := h.promptService.ProcessPrompt(req, r)
+	result, err := h.promptService.ProcessPrompt(r.Context(), &reqBody)
 	if err != nil {
 		logger.GetLogger().Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	if !result {
-		resp := models.SendResponse{Success: result}
+		resp := models.SendResponse{Status: result}
 		w.Header().Set("Content-Type", "application/json")
 		err = json.NewEncoder(w).Encode(resp)
 		if err != nil {

@@ -1,9 +1,9 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"guardian/configs"
 	"guardian/internal/models"
@@ -11,10 +11,11 @@ import (
 	"guardian/utlis/logger"
 	"net/http"
 	"sync"
+	"time"
 )
 
 type PromptServiceInterface interface {
-	ProcessPrompt(req models.SendRequest, r *http.Request) (bool, error)
+	ProcessPrompt(ctx context.Context, reqBody *models.RefereeRequest) (bool, error)
 }
 
 type PromptService struct {
@@ -27,19 +28,18 @@ func NewPromptService(userService UserServiceInterface) *PromptService {
 	}
 }
 
-func (p *PromptService) ProcessPrompt(req models.SendRequest, r *http.Request) (bool, error) {
-	if req.Prompt == "" {
-		return false, errors.New("empty prompt")
+func (p *PromptService) ProcessPrompt(ctx context.Context, reqBody *models.RefereeRequest) (bool, error) {
+	if reqBody.Prompt == "" {
+		return false, nil
 	}
-
-	if !p.pipeline(req, r) {
+	if !p.pipeline(ctx, reqBody) {
 		return false, nil
 	}
 
 	return true, nil
 }
 
-func (p *PromptService) pipeline(req models.SendRequest, r *http.Request) bool {
+func (p *PromptService) pipeline(ctx context.Context, req *models.RefereeRequest) bool {
 	tasks, err := p.userService.GetUserTasksByID(req.UserID)
 	if err != nil {
 		logger.GetLogger().Errorf("err in pipeline: %v", err)
@@ -55,7 +55,7 @@ func (p *PromptService) pipeline(req models.SendRequest, r *http.Request) bool {
 	var wg sync.WaitGroup
 	for i := 0; i < workerPoolSize; i++ {
 		wg.Add(1)
-		go p.worker(taskChan, resultsChan, quit, r, &wg, &closeQuitOnce)
+		go p.worker(taskChan, resultsChan, quit, ctx, req, &wg, &closeQuitOnce)
 	}
 
 	for _, task := range tasks {
@@ -81,7 +81,7 @@ func (p *PromptService) pipeline(req models.SendRequest, r *http.Request) bool {
 }
 
 func (p *PromptService) worker(taskChan chan entities.Task, resultsChan chan entities.TaskResult, quit chan struct{},
-	r *http.Request, wg *sync.WaitGroup, closeQuitOnce *sync.Once) {
+	ctx context.Context, reqBody *models.RefereeRequest, wg *sync.WaitGroup, closeQuitOnce *sync.Once) {
 	defer wg.Done()
 
 	for {
@@ -92,7 +92,7 @@ func (p *PromptService) worker(taskChan chan entities.Task, resultsChan chan ent
 			}
 			taskType := task.Type
 
-			result, err := p.forwardRequest(r, task.Address)
+			result, err := p.forwardRequest(ctx, task.Address, reqBody)
 			if err != nil {
 				resultsChan <- entities.TaskResult{TaskType: taskType, Success: false, Err: err}
 				closeQuitOnce.Do(func() {
@@ -101,7 +101,7 @@ func (p *PromptService) worker(taskChan chan entities.Task, resultsChan chan ent
 				return
 			}
 
-			if !result.Success {
+			if !result.Status {
 				resultsChan <- entities.TaskResult{TaskType: taskType, Success: false}
 				closeQuitOnce.Do(func() {
 					close(quit)
@@ -117,18 +117,22 @@ func (p *PromptService) worker(taskChan chan entities.Task, resultsChan chan ent
 	}
 }
 
-func (p *PromptService) forwardRequest(req *http.Request, taskAddress string) (*models.SendResponse, error) {
-	newReq, err := http.NewRequestWithContext(context.Background(), req.Method, taskAddress, req.Body)
+func (p *PromptService) forwardRequest(ctx context.Context, taskAddress string,
+	reqBody *models.RefereeRequest) (*models.SendResponse, error) {
+
+	marshalledBody, err := json.Marshal(&reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshall the request body: %w", err)
+	}
+	newReq, err := http.NewRequestWithContext(ctx, http.MethodPost, taskAddress, bytes.NewBuffer(marshalledBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new request: %w", err)
 	}
-	defer req.Body.Close()
 
-	for k, v := range req.Header {
-		newReq.Header[k] = v
-	}
+	newReq.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	// TODO: Use configs
+	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(newReq)
 	if err != nil {
 		return nil, fmt.Errorf("failed to forward request: %w", err)
