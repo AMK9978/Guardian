@@ -5,6 +5,7 @@
 package setup
 
 import (
+	"guardian/internal/middleware"
 	"net/http"
 
 	"guardian/api"
@@ -26,6 +27,7 @@ var UserServiceSet = wire.NewSet(
 
 var SendHandlerSet = wire.NewSet(
 	api.NewSendHandlerController,
+	middleware.NewMiddleware(),
 	services.NewPromptService,
 	UserServiceSet,
 	repository.NewTaskRepository,

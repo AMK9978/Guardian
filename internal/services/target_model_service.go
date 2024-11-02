@@ -9,6 +9,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type TargetModelServiceInterface interface {
+	GetTargetModel(ctx context.Context, modelID primitive.ObjectID) (entities.TargetModel, error)
+	CreateTargetModel(ctx context.Context, model entities.TargetModel) error
+}
+
 type TargetModelService struct {
 	targetModelRepo *repository.TargetModelRepository
 }
@@ -19,16 +24,17 @@ func NewTargetModelService(targetModelRepo *repository.TargetModelRepository) *T
 	}
 }
 
-func (t *TargetModelService) GetTargetModel(modelID primitive.ObjectID) (*entities.TargetModel, error) {
-	targetModel, err := t.targetModelRepo.GetModel(context.Background(), modelID)
+func (t *TargetModelService) GetTargetModel(ctx context.Context, modelID primitive.ObjectID) (entities.TargetModel,
+	error) {
+	targetModel, err := t.targetModelRepo.GetModel(ctx, modelID)
 	if err != nil {
-		return nil, err
+		return entities.TargetModel{}, err
 	}
-	return targetModel, err
+	return *targetModel, err
 }
 
-func (t *TargetModelService) CreateTargetModel(model entities.TargetModel) error {
-	_, err := t.targetModelRepo.CreateModel(context.Background(), model)
+func (t *TargetModelService) CreateTargetModel(ctx context.Context, model entities.TargetModel) error {
+	_, err := t.targetModelRepo.CreateModel(ctx, model)
 	if err != nil {
 		return err
 	}

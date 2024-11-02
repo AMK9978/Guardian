@@ -16,6 +16,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type Interface interface {
+	GetUserFromContext(r *http.Request) (*primitive.ObjectID, error)
+}
+
+type Middleware struct {
+
+}
+
+func NewMiddleware() *Middleware{
+	return &Middleware{}
+}
+
 func VerifyJWT(protected http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if configs.GlobalConfig.EnableExternalAuth {
@@ -117,7 +129,7 @@ func ParseRequestJWT(r *http.Request) (jwt.MapClaims, error) {
 	return claims, nil
 }
 
-func GetUserFromContext(r *http.Request) (*primitive.ObjectID, error) {
+func (m *Middleware) GetUserFromContext(r *http.Request) (*primitive.ObjectID, error) {
 	claims, err := ParseRequestJWT(r)
 	if err != nil {
 		return nil, err

@@ -18,6 +18,7 @@ import (
 
 type PromptServiceInterface interface {
 	ProcessPrompt(ctx context.Context, reqBody *models.RefereeRequest) (bool, error)
+	Do(req *http.Request) (*http.Response, error)
 }
 
 type HTTPClient interface {
@@ -30,7 +31,7 @@ func NewHTTPClientProvider() *http.Client {
 
 type PromptService struct {
 	userService UserServiceInterface
-	client      HTTPClient
+	HTTPClient
 }
 
 var (
@@ -41,7 +42,7 @@ var (
 func NewPromptService(userService UserServiceInterface, client HTTPClient) *PromptService {
 	return &PromptService{
 		userService: userService,
-		client:      client,
+		HTTPClient:      client,
 	}
 }
 
@@ -153,7 +154,7 @@ func (p *PromptService) forwardRequest(ctx context.Context, taskAddress string,
 
 	newReq.Header.Set("Content-Type", "application/json")
 
-	resp, err := p.client.Do(newReq)
+	resp, err := p.HTTPClient.Do(newReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrForwardRequest, err)
 	}

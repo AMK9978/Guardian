@@ -2,11 +2,10 @@ package api
 
 import (
 	"encoding/json"
-	"net/http"
-
 	"guardian/internal/models"
 	"guardian/internal/services"
 	"guardian/utlis/logger"
+	"net/http"
 )
 
 type AuthController struct {
@@ -35,7 +34,12 @@ func (h *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"token": token})
+	err = json.NewEncoder(w).Encode(map[string]string{"token": token})
+	if err != nil {
+		logger.GetLogger().Errorf("Error:%v", err)
+		http.Error(w, "Error encoding token", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
@@ -55,11 +59,11 @@ func (h *AuthController) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *AuthController) DeleteUser(w http.ResponseWriter, r *http.Request) {
+func (h *AuthController) DeleteUser(_ http.ResponseWriter, _ *http.Request) {
 }
 
-func (h *AuthController) ActivateUser(w http.ResponseWriter, r *http.Request) {
+func (h *AuthController) ActivateUser(_ http.ResponseWriter, _ *http.Request) {
 }
 
-func (h *AuthController) UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (h *AuthController) UpdateUser(_ http.ResponseWriter, _ *http.Request) {
 }
