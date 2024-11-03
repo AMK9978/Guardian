@@ -7,12 +7,12 @@
 package setup
 
 import (
-	"guardian/api"
-	"guardian/internal/repository"
-	"guardian/internal/services"
-
 	"github.com/google/wire"
 	"go.mongodb.org/mongo-driver/mongo"
+	"guardian/api"
+	"guardian/internal/middleware"
+	"guardian/internal/repository"
+	"guardian/internal/services"
 )
 
 // Injectors from wire.go:
@@ -25,7 +25,8 @@ func InitializeSendHandlerController(db *mongo.Database) *api.SendHandlerControl
 	promptService := services.NewPromptService(userService, client)
 	targetModelRepository := repository.NewTargetModelRepository(db)
 	targetModelService := services.NewTargetModelService(targetModelRepository)
-	sendHandlerController := api.NewSendHandlerController(promptService, targetModelService)
+	middlewareMiddleware := middleware.NewMiddleware()
+	sendHandlerController := api.NewSendHandlerController(promptService, targetModelService, middlewareMiddleware)
 	return sendHandlerController
 }
 
@@ -47,4 +48,4 @@ var UserServiceSet = wire.NewSet(
 	NewUserService, wire.Bind(new(services.UserServiceInterface), new(*services.UserService)),
 )
 
-var SendHandlerSet = wire.NewSet(api.NewSendHandlerController, services.NewPromptService, UserServiceSet, repository.NewTaskRepository)
+var SendHandlerSet = wire.NewSet(api.NewSendHandlerController, middleware.NewMiddleware, wire.Bind(new(middleware.Interface), new(*middleware.Middleware)), services.NewPromptService, wire.Bind(new(services.PromptServiceInterface), new(*services.PromptService)), UserServiceSet, repository.NewTaskRepository)

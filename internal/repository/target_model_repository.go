@@ -12,6 +12,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type TargetModelRepoInterface interface {
+	GetModels(ctx context.Context, modelIDs []primitive.ObjectID) ([]entities.TargetModel, error)
+	GetModel(ctx context.Context, modelID primitive.ObjectID) (entities.TargetModel, error)
+	CreateModel(ctx context.Context, model entities.TargetModel) (interface{}, error)
+	DeleteModel(ctx context.Context, modelID primitive.ObjectID) (int64, error)
+	UpdateModel(ctx context.Context, model entities.TargetModel) (int64, error)
+}
+
 type TargetModelRepository struct {
 	*MongoBaseRepository[entities.TargetModel]
 }
@@ -40,15 +48,15 @@ func (u *TargetModelRepository) GetModels(ctx context.Context, modelIDs []primit
 	return models, nil
 }
 
-func (u *TargetModelRepository) GetModel(ctx context.Context, modelID primitive.ObjectID) (*entities.TargetModel,
+func (u *TargetModelRepository) GetModel(ctx context.Context, modelID primitive.ObjectID) (entities.TargetModel,
 	error,
 ) {
 	var model entities.TargetModel
 	err := u.collection.FindOne(ctx, bson.D{{"_id", modelID}}).Decode(&model)
 	if err != nil {
-		return nil, err
+		return entities.TargetModel{}, err
 	}
-	return &model, err
+	return model, err
 }
 
 func (u *TargetModelRepository) CreateModel(ctx context.Context, model entities.TargetModel) (interface{}, error) {

@@ -27,8 +27,10 @@ var UserServiceSet = wire.NewSet(
 
 var SendHandlerSet = wire.NewSet(
 	api.NewSendHandlerController,
-	middleware.NewMiddleware(),
+	middleware.NewMiddleware,
+	wire.Bind(new(middleware.Interface), new(*middleware.Middleware)),
 	services.NewPromptService,
+	wire.Bind(new(services.PromptServiceInterface), new(*services.PromptService)),
 	UserServiceSet,
 	repository.NewTaskRepository,
 )
@@ -36,10 +38,12 @@ var SendHandlerSet = wire.NewSet(
 func InitializeSendHandlerController(db *mongo.Database) *api.SendHandlerController {
 	wire.Build(
 		repository.NewUserRepository,
-		wire.Bind(new(services.HTTPClient), new(*http.Client)),
 		repository.NewTargetModelRepository,
+		wire.Bind(new(repository.TargetModelRepoInterface), new(*repository.TargetModelRepository)),
+		wire.Bind(new(services.HTTPClient), new(*http.Client)),
 		SendHandlerSet,
 		services.NewTargetModelService,
+		wire.Bind(new(services.TargetModelServiceInterface), new(*services.TargetModelService)),
 		services.NewHTTPClientProvider,
 	)
 	return nil

@@ -10,27 +10,27 @@ import (
 )
 
 type TargetModelServiceInterface interface {
-	GetTargetModel(ctx context.Context, modelID primitive.ObjectID) (entities.TargetModel, error)
+	GetTargetModel(ctx context.Context, modelID primitive.ObjectID) (*entities.TargetModel, error)
 	CreateTargetModel(ctx context.Context, model entities.TargetModel) error
 }
 
 type TargetModelService struct {
-	targetModelRepo *repository.TargetModelRepository
+	targetModelRepo repository.TargetModelRepoInterface
 }
 
-func NewTargetModelService(targetModelRepo *repository.TargetModelRepository) *TargetModelService {
+func NewTargetModelService(targetModelRepo repository.TargetModelRepoInterface) *TargetModelService {
 	return &TargetModelService{
 		targetModelRepo: targetModelRepo,
 	}
 }
 
-func (t *TargetModelService) GetTargetModel(ctx context.Context, modelID primitive.ObjectID) (entities.TargetModel,
+func (t *TargetModelService) GetTargetModel(ctx context.Context, modelID primitive.ObjectID) (*entities.TargetModel,
 	error) {
 	targetModel, err := t.targetModelRepo.GetModel(ctx, modelID)
 	if err != nil {
-		return entities.TargetModel{}, err
+		return nil, err
 	}
-	return *targetModel, err
+	return &targetModel, err
 }
 
 func (t *TargetModelService) CreateTargetModel(ctx context.Context, model entities.TargetModel) error {
