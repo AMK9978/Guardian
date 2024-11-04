@@ -2,6 +2,7 @@
 syntax = "proto3";
 
 package prompt;
+option go_package = "./prompt_api";
 
 service PromptService {
     rpc SendPrompt(SendPromptRequest) returns (SendPromptResponse);
@@ -9,9 +10,14 @@ service PromptService {
 
 message SendPromptRequest {
     string prompt = 1;
+    string chat = 2;
+    string userID = 3;
+    string targetID = 4;
 }
 
 message SendPromptResponse {
-    bool success = 1;
-    string message = 2;
+    bool status = 1;
+    oneof optional_score {
+        uint32 score = 2;
+    }
 }

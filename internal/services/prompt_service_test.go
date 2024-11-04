@@ -24,12 +24,14 @@ var ErrUserTasks = errors.New("error in GetUserTasks")
 
 func TestProcessPrompt(t *testing.T) {
 	t.Parallel()
-
+	pluginList := []primitive.ObjectID{primitive.NewObjectID()}
 	mockUserService := new(mocks.MockUserService)
+	mockPluginService := new(mocks.MockPluginService)
 	mockClient := new(mocks.MockClient)
-	promptService := NewPromptService(mockUserService, mockClient)
+	pluginClient := mockClient
+	promptService := NewPromptService(mockUserService, pluginClient, mockPluginService)
 	userID := primitive.NewObjectID()
-	validReq := &models.RefereeRequest{
+	validReq := &models.PluginRequest{
 		UserID:   userID,
 		Prompt:   "Test prompt",
 		TargetID: primitive.NewObjectID(),
@@ -37,7 +39,7 @@ func TestProcessPrompt(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		reqBody        *models.RefereeRequest
+		reqBody        *models.PluginRequest
 		mockTasks      []entities.Task
 		mockError      error
 		expectedResult bool
@@ -46,14 +48,14 @@ func TestProcessPrompt(t *testing.T) {
 		{
 			name:           "Valid prompt with tasks",
 			reqBody:        validReq,
-			mockTasks:      []entities.Task{{Type: "ExampleTask", Address: "http://example.com"}},
+			mockTasks:      []entities.Task{{Type: "ExampleTask", Plugins: pluginList}},
 			mockError:      nil,
 			expectedResult: true,
 			expectedError:  nil,
 		},
 		{
 			name:           "Empty prompt",
-			reqBody:        &models.RefereeRequest{UserID: userID, Prompt: ""},
+			reqBody:        &models.PluginRequest{UserID: userID, Prompt: ""},
 			expectedResult: false,
 			expectedError:  nil,
 		},
@@ -63,7 +65,7 @@ func TestProcessPrompt(t *testing.T) {
 			mockTasks:      nil,
 			mockError:      ErrUserTasks,
 			expectedResult: false,
-			expectedError:  nil,
+			expectedError:  ErrUserTasks,
 		},
 	}
 
@@ -82,20 +84,21 @@ func TestProcessPrompt(t *testing.T) {
 
 func TestPipeline_Cases(t *testing.T) {
 	t.Parallel()
+	pluginListID := []primitive.ObjectID{primitive.NewObjectID()}
 	tests := []struct {
 		name         string
 		userTasks    []entities.Task
 		userTasksErr error
-		mockResp     models.SendResponse
+		mockResp     models.PluginResponse
 		mockStatus   int
 		expectErr    bool
 		expectRes    bool
 	}{
 		{
 			"Normal Case",
-			[]entities.Task{{Type: "ExampleTask", Address: "http://example.com"}},
+			[]entities.Task{{Type: "ExampleTask", Plugins: pluginListID}},
 			nil,
-			models.SendResponse{Status: true},
+			models.PluginResponse{Status: true},
 			http.StatusOK, false,
 			true,
 		},
@@ -103,22 +106,22 @@ func TestPipeline_Cases(t *testing.T) {
 			"GetUserTasksFails",
 			[]entities.Task{},
 			ErrUserTasks,
-			models.SendResponse{},
+			models.PluginResponse{},
 			0, true, false,
 		},
 		{
 			"ReceivesFalse",
-			[]entities.Task{{Type: "ExampleTask", Address: "http://example.com"}},
+			[]entities.Task{{Type: "ExampleTask", Plugins: pluginListID}},
 			nil,
-			models.SendResponse{Status: false},
+			models.PluginResponse{Status: false},
 			http.StatusOK, false,
 			false,
 		},
 		{
 			"ReceivesError",
-			[]entities.Task{{Type: "ExampleTask", Address: "http://example.com"}},
+			[]entities.Task{{Type: "ExampleTask", Plugins: pluginListID}},
 			nil,
-			models.SendResponse{Status: true},
+			models.PluginResponse{Status: true},
 			http.StatusInternalServerError,
 			false, false,
 		},
@@ -127,29 +130,51 @@ func TestPipeline_Cases(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
+			mockPluginService := new(mocks.MockPluginService)
 			mockUserService := new(mocks.MockUserService)
 			mockClient := new(mocks.MockClient)
-			promptService := NewPromptService(mockUserService, mockClient)
+
+			pluginList := []entities.Plugin{
+				{
+					ID:       primitive.ObjectID{},
+					Name:     "",
+					Provider: "",
+					Address:  "",
+					Status:   0,
+					Token:    "",
+					Protocol: entities.Protocol{
+						ID:   primitive.ObjectID{},
+						Type: entities.HTTPProtocol,
+					},
+				},
+			}
+			promptService := NewPromptService(mockUserService, mockClient, mockPluginService)
 			configs.GlobalConfig = configs.Config{
 				PipelineWorkerPoolSize: runtime.NumCPU(),
 			}
 
 			userID := primitive.NewObjectID()
-			reqBody := &models.RefereeRequest{
+			reqBody := &models.PluginRequest{
 				UserID:   userID,
 				Prompt:   "Test prompt",
 				TargetID: primitive.NewObjectID(),
 			}
 
 			mockUserService.On("GetUserTasksByID", userID).Return(tt.userTasks, tt.userTasksErr)
-
-			if tt.mockStatus != 0 {
-				m, _ := json.Marshal(tt.mockResp)
-				mockClient.On("Do", mock.Anything).Return(&http.Response{
-					StatusCode: tt.mockStatus,
-					Body:       io.NopCloser(bytes.NewBuffer(m)),
-				}, nil)
+			for _, task := range tt.userTasks {
+				mockPluginService.On("GetPluginsByTask", mock.Anything, task).
+					Return(pluginList, nil)
 			}
+			m, _ := json.Marshal(tt.mockResp)
+			mockClient.On("Do", mock.Anything).Return(&http.Response{
+				StatusCode: tt.mockStatus,
+				Body:       io.NopCloser(bytes.NewBuffer(m)),
+			}, nil)
+			mockClient.On("Forward", mock.Anything, reqBody).Return(&models.PluginResponse{
+				Status: tt.expectRes,
+				Score: 1,
+			}, nil)
 
 			result, err := promptService.pipeline(context.Background(), reqBody)
 

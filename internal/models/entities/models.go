@@ -29,14 +29,26 @@ type User struct {
 	Tasks    []primitive.ObjectID `json:"tasks,omitempty"`
 }
 
-// RefereeModel represents a model used by referees.
-type RefereeModel struct {
+// Plugin represents a plugin to judge the prompt.
+type Plugin struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty"`
 	Name     string             `json:"name"`
 	Provider string             `json:"provider"`
 	Address  string             `json:"address"`
 	Status   int                `json:"status"`
 	Token    string             `json:"token,omitempty"`
+	Protocol Protocol           `json:"protocol"`
+}
+
+const (
+	GRPCProtocol = "grpc"
+	HTTPProtocol = "http"
+	WEBSOCKETProtocol = "web_socket"
+)
+
+type Protocol struct {
+	ID   primitive.ObjectID `bson:"_id,omitempty"`
+	Type string             `json:"type"`
 }
 
 // TargetModel represents the target model for processing.
@@ -47,6 +59,7 @@ type TargetModel struct {
 	Address  string             `json:"address"`
 	Status   int                `json:"status"`
 	Token    string             `json:"token"`
+	Protocol Protocol           `json:"protocol"`
 }
 
 // Usage records token consumption for users.
@@ -60,10 +73,10 @@ type Usage struct {
 
 // Task represents a task that can be used in the pipeline.
 type Task struct {
-	ID      primitive.ObjectID `json:"_id"`
-	Type    string             `json:"type"`
-	Status  int                `json:"status"`
-	Address string             `json:"address"`
+	ID      primitive.ObjectID   `json:"_id"`
+	Type    string               `json:"type"`
+	Status  int                  `json:"status"`
+	Plugins []primitive.ObjectID `json:"plugins,omitempty"`
 }
 
 // TaskResult represents the result of task in the task pipeline

@@ -27,7 +27,7 @@ func TestSendHandler(t *testing.T) {
 	t.Parallel()
 
 	m := new(mocks.MockMiddleware)
-	reqBody := models.RefereeRequest{
+	reqBody := models.PluginRequest{
 		UserID:   primitive.ObjectID{},
 		Chat:     "Previous conversation",
 		Prompt:   "Hello",
@@ -91,7 +91,7 @@ func TestSendHandler(t *testing.T) {
 		body, _ := json.Marshal(reqBody)
 		req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "/send", bytes.NewBuffer(body))
 		rec := httptest.NewRecorder()
-		respBody := models.SendResponse{Status: false}
+		respBody := models.PluginResponse{Status: false}
 		respBodyJSON, _ := json.Marshal(respBody)
 
 		controller.SendHandler(rec, req)

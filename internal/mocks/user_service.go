@@ -26,10 +26,10 @@ func (m *MockUserService) GetUserTasksByID(userID primitive.ObjectID) ([]entitie
 	return args.Get(0).([]entities.Task), args.Error(1)
 }
 
-func (m *MockUserService) GetUser(id primitive.ObjectID) (*entities.User, error) {
+func (m *MockUserService) GetUser(_ primitive.ObjectID) (*entities.User, error) {
 	return nil, nil
 }
 
-func (m *MockUserService) ActivateUser(req models.SignUpRequest) error {
+func (m *MockUserService) ActivateUser(_ models.SignUpRequest) error {
 	return nil
 }

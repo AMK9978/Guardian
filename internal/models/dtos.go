@@ -22,15 +22,17 @@ type SendRequest struct {
 	TargetID primitive.ObjectID  `json:"target_id"`
 }
 
-// RefereeRequest represents a request sending to the referee plugins
-type RefereeRequest struct {
+// PluginRequest represents a request sending to the referee plugins
+type PluginRequest struct {
 	UserID   primitive.ObjectID `json:"user_id"`
 	Chat     string             `json:"chat,omitempty"`
+	Address  string             `json:"address,omitempty"`
 	Prompt   string             `json:"prompt"`
 	TargetID primitive.ObjectID `json:"target_id"`
 }
 
-// SendResponse represents the response from a send operation.
-type SendResponse struct {
-	Status bool `json:"status"`
+// PluginResponse represents the response from a send operation.
+type PluginResponse struct {
+	Status bool   `json:"status"`
+	Score  uint32 `json:"score,omitempty"`
 }

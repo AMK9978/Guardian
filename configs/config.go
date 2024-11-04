@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"guardian/prompt_api"
 	"log"
 	"runtime"
 	"time"
@@ -18,18 +19,18 @@ type Collections struct {
 	User         string
 	Task         string
 	Group        string
-	TargetModel  string
-	RefereeModel string
+	TargetModel string
+	Plugin      string
 }
 
 // NewCollections initializes the collection names.
 func NewCollections() *Collections {
 	return &Collections{
-		User:         "users",
-		Task:         "tasks",
-		Group:        "groups",
-		TargetModel:  "target_models",
-		RefereeModel: "referee_models",
+		User:        "users",
+		Task:        "tasks",
+		Group:       "groups",
+		TargetModel: "target_models",
+		Plugin:      "plugins",
 	}
 }
 
@@ -54,7 +55,8 @@ type Config struct {
 	ExternalJwtIssuer      string
 	ExternalJwtAudience    string
 	EnableExternalAuth     bool
-	HttpClientTimeout      time.Duration
+	HttpClientTimeout time.Duration
+	GRPCManager       *prompt_api.ClientManager
 }
 
 func LoadConfig() Config {
@@ -137,5 +139,6 @@ func LoadConfig() Config {
 		ExternalJwtAudience:    viper.GetString("EXTERNAL_JWT_AUDIENCE"),
 		EnableExternalAuth:     externalAuthStatus,
 		HttpClientTimeout:      time.Duration(viper.GetInt("HTTP_CLIENT_TIMEOUT")) * time.Second,
+		GRPCManager:            prompt_api.NewClientManager(),
 	}
 }

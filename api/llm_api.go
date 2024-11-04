@@ -34,7 +34,7 @@ func (h *SendHandlerController) SendHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var reqBody models.RefereeRequest
+	var reqBody models.PluginRequest
 	err = json.NewDecoder(r.Body).Decode(&reqBody)
 	if err != nil {
 		logger.GetLogger().Errorf("error in sendhandler %v", err)
@@ -57,7 +57,7 @@ func (h *SendHandlerController) SendHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	if !result {
-		resp := models.SendResponse{Status: result}
+		resp := models.PluginResponse{Status: result}
 		w.Header().Set("Content-Type", "application/json")
 		respBody, err := json.Marshal(resp)
 		if err != nil {
@@ -83,7 +83,7 @@ func (h *SendHandlerController) SendHandler(w http.ResponseWriter, r *http.Reque
 		newReq.Header[k] = v
 	}
 
-	resp, err := h.promptService.Do(newReq)
+	resp, err := h.promptService.SendPrompt(r.Context(), newReq)
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return

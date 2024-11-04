@@ -1,9 +1,7 @@
 package services
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
@@ -11,18 +9,16 @@ import (
 	"guardian/configs"
 	"guardian/internal/models"
 	"guardian/internal/models/entities"
+	"guardian/internal/plugins"
+	"guardian/prompt_api"
 	"guardian/utlis/logger"
 
 	"github.com/pkg/errors"
 )
 
 type PromptServiceInterface interface {
-	ProcessPrompt(ctx context.Context, reqBody *models.RefereeRequest) (bool, error)
-	Do(req *http.Request) (*http.Response, error)
-}
-
-type HTTPClient interface {
-	Do(req *http.Request) (*http.Response, error)
+	ProcessPrompt(ctx context.Context, reqBody *models.PluginRequest) (bool, error)
+	SendPrompt(ctx context.Context, newReq *http.Request) (*http.Response, error)
 }
 
 func NewHTTPClientProvider() *http.Client {
@@ -30,23 +26,29 @@ func NewHTTPClientProvider() *http.Client {
 }
 
 type PromptService struct {
-	userService UserServiceInterface
-	HTTPClient
+	userService   UserServiceInterface
+	pluginService PluginServiceInterface
+	client plugins.HTTPClientInterface
 }
 
 var (
-	ErrPluginResponseFailed = errors.New("failed to receive a response")
-	ErrForwardRequest       = errors.New("failed to forward request")
+	ErrForwardRequest = errors.New("failed to forward request")
 )
 
-func NewPromptService(userService UserServiceInterface, client HTTPClient) *PromptService {
+func NewPromptService(userService UserServiceInterface, client plugins.HTTPClientInterface,
+	pluginService PluginServiceInterface) *PromptService {
 	return &PromptService{
 		userService: userService,
-		HTTPClient:      client,
+		client:  client,
+		pluginService: pluginService,
 	}
 }
 
-func (p *PromptService) ProcessPrompt(ctx context.Context, reqBody *models.RefereeRequest) (bool, error) {
+func (p *PromptService) SendPrompt(ctx context.Context, newReq *http.Request) (*http.Response, error) {
+	return p.client.Do(newReq)
+}
+
+func (p *PromptService) ProcessPrompt(ctx context.Context, reqBody *models.PluginRequest) (bool, error) {
 	if reqBody.Prompt == "" {
 		return false, nil
 	}
@@ -61,7 +63,7 @@ func (p *PromptService) ProcessPrompt(ctx context.Context, reqBody *models.Refer
 	return true, nil
 }
 
-func (p *PromptService) pipeline(ctx context.Context, req *models.RefereeRequest) (bool, error) {
+func (p *PromptService) pipeline(ctx context.Context, req *models.PluginRequest) (bool, error) {
 	tasks, err := p.userService.GetUserTasksByID(req.UserID)
 	if err != nil {
 		logger.GetLogger().Errorf("err in pipeline: %v", err)
@@ -103,7 +105,7 @@ func (p *PromptService) pipeline(ctx context.Context, req *models.RefereeRequest
 }
 
 func (p *PromptService) worker(ctx context.Context, taskChan chan entities.Task, resultsChan chan entities.TaskResult,
-	quit chan struct{}, reqBody *models.RefereeRequest, wg *sync.WaitGroup, closeQuitOnce *sync.Once,
+	quit chan struct{}, reqBody *models.PluginRequest, wg *sync.WaitGroup, closeQuitOnce *sync.Once,
 ) {
 	defer wg.Done()
 
@@ -114,8 +116,15 @@ func (p *PromptService) worker(ctx context.Context, taskChan chan entities.Task,
 				return
 			}
 			taskType := task.Type
-
-			result, err := p.forwardRequest(ctx, task.Address, reqBody)
+			pluginList, err := p.pluginService.GetPluginsByTask(ctx, task)
+			if err != nil {
+				resultsChan <- entities.TaskResult{TaskType: taskType, Success: false, Err: err}
+				closeQuitOnce.Do(func() {
+					close(quit)
+				})
+				return
+			}
+			result, err := p.forwardRequest(ctx, pluginList, reqBody)
 			if err != nil {
 				resultsChan <- entities.TaskResult{TaskType: taskType, Success: false, Err: err}
 				closeQuitOnce.Do(func() {
@@ -124,7 +133,7 @@ func (p *PromptService) worker(ctx context.Context, taskChan chan entities.Task,
 				return
 			}
 
-			if !result.Status {
+			if !result {
 				resultsChan <- entities.TaskResult{TaskType: taskType, Success: false}
 				closeQuitOnce.Do(func() {
 					close(quit)
@@ -140,34 +149,37 @@ func (p *PromptService) worker(ctx context.Context, taskChan chan entities.Task,
 	}
 }
 
-func (p *PromptService) forwardRequest(ctx context.Context, taskAddress string,
-	reqBody *models.RefereeRequest,
-) (*models.SendResponse, error) {
-	marshalledBody, err := json.Marshal(&reqBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshall the request body: %w", err)
-	}
-	newReq, err := http.NewRequestWithContext(ctx, http.MethodPost, taskAddress, bytes.NewBuffer(marshalledBody))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create new request: %w", err)
+func (p *PromptService) forwardRequest(ctx context.Context, pluginList []entities.Plugin,
+	reqBody *models.PluginRequest) (bool, error) {
+	for _, plugin := range pluginList {
+		var client plugins.PluginClient
+
+		switch plugin.Protocol.Type {
+		case entities.HTTPProtocol:
+			client = p.client
+
+		case entities.GRPCProtocol:
+			grpcConn, err := configs.GlobalConfig.GRPCManager.GetClient(plugin)
+			if err != nil {
+				return false, fmt.Errorf("%w: %w", ErrForwardRequest, err)
+			}
+			client = &plugins.GRPCClient{
+				Client: prompt_api.NewPromptServiceClient(grpcConn),
+			}
+
+		default:
+			return false, fmt.Errorf("unsupported protocol type: %s", plugin.Protocol.Type)
+		}
+
+		reqBody.Address = plugin.Address
+		result, err := client.Forward(ctx, reqBody)
+		if err != nil {
+			return false, err
+		}
+		if !result.Status {
+			return false, nil
+		}
 	}
 
-	newReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := p.HTTPClient.Do(newReq)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrForwardRequest, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%w from: %s", ErrPluginResponseFailed, taskAddress)
-	}
-
-	var sendResponse models.SendResponse
-	if err := json.NewDecoder(resp.Body).Decode(&sendResponse); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return &sendResponse, nil
+	return true, nil
 }

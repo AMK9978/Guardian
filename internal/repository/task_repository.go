@@ -52,7 +52,7 @@ func (u *TaskRepository) CreateTask(ctx context.Context, task entities.Task) (in
 	cursor, err := u.collection.InsertOne(ctx, bson.D{
 		{"type", task.Type},
 		{"status", task.Status},
-		{"address", task.Address},
+		{"plugins", task.Plugins},
 	})
 	if err != nil {
 		return nil, err

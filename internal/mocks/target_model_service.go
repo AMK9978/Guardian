@@ -12,10 +12,10 @@ type MockTargetModelService struct {
 }
 
 
-func (m *MockTargetModelService) GetTargetModel(_ context.Context, modelID primitive.ObjectID) (entities.TargetModel,
+func (m *MockTargetModelService) GetTargetModel(_ context.Context, modelID primitive.ObjectID) (*entities.TargetModel,
 	error) {
 	args := m.Called(modelID)
-	return args.Get(0).(entities.TargetModel), args.Error(1)
+	return &entities.TargetModel{}, args.Error(1)
 }
 
 func (m *MockTargetModelService) CreateTargetModel(_ context.Context, _ entities.TargetModel) error {

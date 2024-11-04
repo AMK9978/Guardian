@@ -12,12 +12,12 @@ type MockPromptService struct {
 }
 
 
-func (p *MockPromptService) ProcessPrompt(_ context.Context, _ *models.RefereeRequest) (bool, error) {
+func (p *MockPromptService) ProcessPrompt(_ context.Context, _ *models.PluginRequest) (bool, error) {
 	args := p.Called()
 	return args.Bool(0), args.Error(1)
 }
 
-func (p *MockPromptService) Do(_ *http.Request) (*http.Response, error) {
+func (p *MockPromptService) SendPrompt(ctx context.Context, newReq *http.Request) (*http.Response, error) {
 	args := p.Called()
 	return args.Get(0).(*http.Response), args.Error(1)
 }
