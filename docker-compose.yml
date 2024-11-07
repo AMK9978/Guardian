@@ -2,6 +2,7 @@ version: '3'
 
 services:
   guardian:
+    image: guardian:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -14,8 +15,11 @@ services:
       - FAILURE_THRESHOLD=3
       - CB_TIMEOUT=5
       - LOCK_TIME=5
-    env_file:
-      - .env.yaml
+      - APP_ENV=production
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ACTIVATION_SECRET_KEY=${ACTIVATION_SECRET_KEY}
+    volumes:
+      - ./.env.yaml:/app/.env.yaml
     ports:
       - "8080:8080"
     depends_on:
@@ -24,14 +28,10 @@ services:
 #      rabbitmq:
 #        condition: service_healthy
       mongodb:
-        condition: service_healthy
+        condition: service_started
 #      milvus:
 #        condition: service_healthy
-    links:
-      - redis
-#      - rabbitmq
-      - mongodb
-#      - milvus
+    network_mode: host
 
   redis:
     image: redis:latest
@@ -46,6 +46,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    network_mode: host
 
 #  rabbitmq:
 #    image: rabbitmq:3-management
@@ -73,6 +74,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    network_mode: host
 
 #  milvus:
 #    image: milvusdb/milvus:latest

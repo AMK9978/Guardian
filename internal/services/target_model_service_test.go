@@ -27,8 +27,6 @@ func TestGetTargetModel(t *testing.T) {
 	targetModelService := NewTargetModelService(targetModelRepo)
 
 	t.Run("GetTargetModel returns err", func(t *testing.T) {
-		t.Parallel()
-
 		targetModelRepo.On("GetModel", mock.Anything, mock.Anything).Return(nil,
 			GetTargetModelErr)
 		_, err := targetModelService.GetTargetModel(context.Background(), primitive.NewObjectID())

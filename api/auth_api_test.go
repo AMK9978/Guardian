@@ -21,6 +21,7 @@ var (
 
 func TestAuthController_Login(t *testing.T) {
 	t.Parallel()
+
 	mockService := new(mocks.MockUserService)
 	controller := NewAuthController(mockService)
 
@@ -32,6 +33,7 @@ func TestAuthController_Login(t *testing.T) {
 
 	t.Run("successful login", func(t *testing.T) {
 		t.Parallel()
+
 		mockService.On("Login", reqBody).Return(token, nil)
 
 		body, _ := json.Marshal(reqBody)
@@ -45,11 +47,13 @@ func TestAuthController_Login(t *testing.T) {
 		_ = json.NewDecoder(rec.Body).Decode(&respBody)
 		assert.Equal(t, token, respBody["token"])
 		mockService.AssertCalled(t, "Login", reqBody)
+		mockService.On("Login", reqBody).Unset()
 	})
 
-	mockService.ExpectedCalls = nil
 	t.Run("login with error", func(t *testing.T) {
 		t.Parallel()
+		mockService := new(mocks.MockUserService)
+		controller := NewAuthController(mockService)
 		mockService.On("Login", reqBody).Return("", ErrLogin)
 
 		body, _ := json.Marshal(reqBody)
@@ -91,6 +95,8 @@ func TestAuthController_SignUp(t *testing.T) {
 	mockService.ExpectedCalls = nil
 	t.Run("Signup fails", func(t *testing.T) {
 		t.Parallel()
+		mockService := new(mocks.MockUserService)
+		controller := NewAuthController(mockService)
 		mockService.On("SignUp", reqBody).Return(ErrSignup)
 
 		body, _ := json.Marshal(reqBody)

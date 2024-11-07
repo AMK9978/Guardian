@@ -55,6 +55,7 @@ func TestSendHandler(t *testing.T) {
 		assert.Equal(t, http.StatusInternalServerError, rec.Code)
 	})
 
+
 	t.Run("process prompt returns error", func(t *testing.T) {
 		t.Parallel()
 
@@ -110,7 +111,7 @@ func TestSendHandler(t *testing.T) {
 		targetModelService.On("GetTargetModel", mock.Anything, mock.Anything).
 			Return(entities.TargetModel{}, nil)
 		promptService.On("ProcessPrompt").Return(true, nil)
-		promptService.On("Do").Return(&http.Response{}, ErrForwardingPrompt)
+		promptService.On("SendPrompt").Return(&http.Response{}, ErrForwardingPrompt)
 
 		body, _ := json.Marshal(reqBody)
 		req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "/send", bytes.NewBuffer(body))

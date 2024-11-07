@@ -3,6 +3,7 @@ package configs
 import (
 	"guardian/prompt_api"
 	"log"
+	"os"
 	"runtime"
 	"time"
 
@@ -16,9 +17,9 @@ import (
 var GlobalConfig Config
 
 type Collections struct {
-	User         string
-	Task         string
-	Group        string
+	User        string
+	Task        string
+	Group       string
 	TargetModel string
 	Plugin      string
 }
@@ -55,12 +56,22 @@ type Config struct {
 	ExternalJwtIssuer      string
 	ExternalJwtAudience    string
 	EnableExternalAuth     bool
-	HttpClientTimeout time.Duration
-	GRPCManager       *prompt_api.ClientManager
+	HttpClientTimeout      time.Duration
+	GRPCManager            *prompt_api.ClientManager
 }
 
 func LoadConfig() Config {
-	viper.AddConfigPath(".")
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		env = "local"
+	}
+
+	if env == "production" {
+		viper.AddConfigPath("app")
+	} else {
+		viper.AddConfigPath(".")
+	}
+
 	viper.SetConfigName(".env")
 	viper.SetConfigType("yaml")
 	err := viper.ReadInConfig()

@@ -10,7 +10,6 @@ import (
 	"guardian/internal/models"
 	"guardian/internal/models/entities"
 	"guardian/internal/plugins"
-	"guardian/prompt_api"
 	"guardian/utlis/logger"
 
 	"github.com/pkg/errors"
@@ -163,9 +162,7 @@ func (p *PromptService) forwardRequest(ctx context.Context, pluginList []entitie
 			if err != nil {
 				return false, fmt.Errorf("%w: %w", ErrForwardRequest, err)
 			}
-			client = &plugins.GRPCClient{
-				Client: prompt_api.NewPromptServiceClient(grpcConn),
-			}
+			client = plugins.NewPluginGRPCClient(grpcConn)
 
 		default:
 			return false, fmt.Errorf("unsupported protocol type: %s", plugin.Protocol.Type)

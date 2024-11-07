@@ -5,12 +5,11 @@
 package setup
 
 import (
-	"guardian/internal/middleware"
-	"net/http"
-
 	"guardian/api"
+	"guardian/internal/middleware"
 	"guardian/internal/repository"
 	"guardian/internal/services"
+	"guardian/internal/plugins"
 
 	"github.com/google/wire"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -44,7 +43,8 @@ func InitializeSendHandlerController(db *mongo.Database) *api.SendHandlerControl
 		repository.NewUserRepository,
 		repository.NewTargetModelRepository,
 		wire.Bind(new(repository.TargetModelRepoInterface), new(*repository.TargetModelRepository)),
-		wire.Bind(new(services.HTTPClient), new(*http.Client)),
+		plugins.NewHTTPClient,
+		wire.Bind(new(plugins.HTTPClientInterface), new(*plugins.HTTPClient)),
 		SendHandlerSet,
 		services.NewTargetModelService,
 		wire.Bind(new(services.TargetModelServiceInterface), new(*services.TargetModelService)),

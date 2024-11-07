@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"google.golang.org/grpc"
 	"guardian/internal/models"
 	"guardian/prompt_api"
 	"net/http"
@@ -31,6 +32,16 @@ type HTTPClient struct {
 
 type GRPCClient struct {
 	Client prompt_api.PromptServiceClient
+}
+
+func NewHTTPClient(client *http.Client) *HTTPClient {
+	return &HTTPClient{client}
+}
+
+func NewPluginGRPCClient(client *grpc.ClientConn) *GRPCClient {
+	return &GRPCClient{
+		Client: prompt_api.NewPromptServiceClient(client),
+	}
 }
 
 func (g *GRPCClient) Forward(ctx context.Context, reqBody *models.PluginRequest) (*models.PluginResponse, error) {

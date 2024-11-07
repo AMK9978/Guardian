@@ -22,6 +22,7 @@ RUN apk --no-cache add dumb-init
 
 # Copy the built binary from the build stage
 COPY --from=build /app/guardian /app/guardian
+COPY --from=build /app/.env.yaml /app/.env.yaml
 
 EXPOSE 8080
 

@@ -23,7 +23,6 @@ import (
 var ErrUserTasks = errors.New("error in GetUserTasks")
 
 func TestProcessPrompt(t *testing.T) {
-	t.Parallel()
 	pluginList := []primitive.ObjectID{primitive.NewObjectID()}
 	mockUserService := new(mocks.MockUserService)
 	mockPluginService := new(mocks.MockPluginService)
@@ -71,7 +70,7 @@ func TestProcessPrompt(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+			//t.Parallel()
 			mockUserService.On("GetUserTasksByID", tt.reqBody.UserID).Return(tt.mockTasks, tt.mockError)
 			result, err := promptService.ProcessPrompt(context.Background(), tt.reqBody)
 

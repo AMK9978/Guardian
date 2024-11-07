@@ -40,13 +40,13 @@ func (m *ClientManager) GetClient(llm entities.Plugin) (*grpc.ClientConn, error)
 }
 
 func (m *ClientManager) CloseAll() {
-    m.mu.Lock()
-    defer m.mu.Unlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-    for id, conn := range m.clients {
-        if err := conn.Close(); err != nil {
-            log.Printf("Failed to close connection for TargetLLM %s: %v", id, err)
-        }
-        delete(m.clients, id)
-    }
+	for id, conn := range m.clients {
+		if err := conn.Close(); err != nil {
+			log.Printf("Failed to close connection for TargetLLM %s: %v", id, err)
+		}
+		delete(m.clients, id)
+	}
 }

@@ -29,8 +29,8 @@ func init() {
 
 	metrics.Init()
 	go func() {
-		logger.GetLogger().Infof("Starting metrics server on :%s", configs.GlobalConfig.ServerPort)
-		err := http.ListenAndServe(fmt.Sprintf(":%s", configs.GlobalConfig.ServerPort), metrics.Handler())
+		logger.GetLogger().Infof("Starting metrics server on :%d", configs.GlobalConfig.MetricServerPort)
+		err := http.ListenAndServe(fmt.Sprintf(":%d", configs.GlobalConfig.MetricServerPort), metrics.Handler())
 		if err != nil {
 			logger.GetLogger().Fatalf("Failed to start metrics server: %s", err)
 		}
