@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/872898055.svg)](https://doi.org/10.5281/zenodo.14211991)
+
 # LLM Guardian Kernel
 A plug-and-play end-to-end LLM guardian for seamless integration.
 The kernel is in charge of fanning out requests to the connected 
