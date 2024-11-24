@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Karimi"
+  given-names: "Amir Mohammad"
+  orcid: "https://orcid.org/0009-0005-0024-1212"
+title: "LLM Guardian"
+version: 1.0.0
+doi: 10.5281/zenodo.1234
+date-released: 2024-11-24
+url: "https://github.com/LLMGuardian/Guardian"
