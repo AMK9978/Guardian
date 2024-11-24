@@ -1,4 +1,5 @@
 [![DOI](https://zenodo.org/badge/872898055.svg)](https://doi.org/10.5281/zenodo.14211991)
+[![Go CI](https://github.com/LLMGuardian/Guardian/actions/workflows/go.yml/badge.svg)](https://github.com/LLMGuardian/Guardian/actions/workflows/go.yml)
 
 # LLM Guardian Kernel
 A plug-and-play end-to-end LLM guardian for seamless integration.
@@ -16,6 +17,13 @@ is malicious or benign. You can also use the kernel as a rate limiter, authentic
 - Test covered, CI, linter
 
 
+## Comparison with OpenShield
+
+![Test](./docs/perf_results.png)
+
+As you can see, the Guardian Kernel beats the OpenShield under the same conditions without external calls for 60-second load tests. Unlike OpenShield, the Guardian by default relies on MongoDB (NoSQL) with
+denormalized data for faster retrieval. If the external plugin calls get added, the difference can become even more significant as the Guardian Kernel supports gRPC calls with reusable clients.
+
 ## Get Started
 Docker:
 ```
@@ -24,7 +32,7 @@ docker-compose up --build -d
 ```
 
 ## Architecture
-The guardian system uses a micro-kernel architecture designed by the idea of extension in mind:
+The guardian system uses a micro-kernel architecture designed with the idea of extension in mind:
 
 ![Architecture](./docs/arch.jpg)
 
