@@ -27,7 +27,7 @@ denormalized data for faster retrieval. If the external plugin calls get added, 
 ## Get Started
 Docker:
 ```
-git clone git@github.com:LLMGuardian/Guardian.git
+git clone git@github.com:amk9978/Guardian.git
 docker-compose up --build -d
 ```
 
