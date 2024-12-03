@@ -1,5 +1,5 @@
 [![DOI](https://zenodo.org/badge/872898055.svg)](https://doi.org/10.5281/zenodo.14211991)
-[![Go CI](https://github.com/LLMGuardian/Guardian/actions/workflows/go.yml/badge.svg)](https://github.com/LLMGuardian/Guardian/actions/workflows/go.yml)
+[![Go CI](https://github.com/AMK9978/Guardian/actions/workflows/go.yml/badge.svg)](https://github.com/AMK9978/Guardian/actions/workflows/go.yml)
 
 # LLM Guardian Kernel
 A plug-and-play end-to-end LLM guardian for seamless integration.
