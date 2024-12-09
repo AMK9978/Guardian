@@ -15,6 +15,7 @@ is malicious or benign. You can also use the kernel as a rate limiter, authentic
 - Define tasks and apply them to users/groups
 - SOLID obedient and Database agnostic (MongoDB by default)
 - Test covered, CI, linter
+- Uses [Google Wire](https://github.com/google/wire) for compile-time dependency injection
 
 
 ## Comparison with OpenShield
