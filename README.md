@@ -5,7 +5,7 @@
 A plug-and-play end-to-end LLM guardian for seamless integration.
 The kernel is in charge of fanning out requests to the connected 
 security plugins based on user and collecting their responses to judge whether a prompt
-is malicious or benign. You can also use the kernel as a rate limiter, authentication unit, or quota management.
+is malicious or benign. You can also use the kernel as a rate limiter, authentication unit, or quota management. It is the heart of the [LLM Guardian System](https://github.com/LLMGuardian).
 
 ## Features & Qualities
 - Written in Golang to be super-fast and production-ready
